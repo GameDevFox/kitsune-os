@@ -9,7 +9,7 @@ SECTIONS
     __text_start = .;
     .text :
     {
-        KEEP(*(.text.boot))
+        *(.text.boot)
         *(.text)
     }
     . = ALIGN(4096); /* align to page size */

@@ -12,24 +12,24 @@ $(BINARY_KERNEL): $(ELF_KERNEL)
 	arm-none-eabi-objcopy $(ELF_KERNEL) -O binary $(BINARY_KERNEL)
 
 $(ELF_KERNEL): linker.ld raspi2-boot.o kernel.o
-	arm-none-eabi-gcc $(GCC_OPTS) -T linker.ld -o $(ELF_KERNEL) -ffreestanding -O2 -nostdlib $(bootName).o kernel.o -lgcc
+	arm-none-eabi-gcc $(GCC_OPTS) -T linker.ld -Xlinker --nmagic -o $(ELF_KERNEL) -ffreestanding -nostdlib $(bootName).o kernel.o -lgcc
 
 raspi2-boot.o: raspi2-boot.S
 	arm-none-eabi-gcc $(GCC_OPTS) -mcpu=cortex-a7 -fpic -ffreestanding -c raspi2-boot.S -o raspi2-boot.o
 
 kernel.o: kernel.c
-	arm-none-eabi-gcc $(GCC_OPTS) -D RASPI_VERSION="$(RASPI_VERSION)" -mcpu=arm1176jzf-s -fpic -ffreestanding -std=gnu99 -c kernel.c -o kernel.o -O2 -Wall -Wextra
+	arm-none-eabi-gcc $(GCC_OPTS) -D RASPI_VERSION="$(RASPI_VERSION)" -mcpu=arm1176jzf-s -fpic -ffreestanding -std=gnu99 -c kernel.c -o kernel.o -Wall -Wextra
 
 clean:
 	rm -rf $(BINARY_KERNEL) $(ELF_KERNEL) raspi2-boot.o kernel.o
 
-QEMU_OPTS = -M raspi2 -nographic -kernel $(ELF_KERNEL)
+QEMU_OPTS = -M raspi2 -nographic
 
-qemu: myos.elf
-	qemu-system-arm $(QEMU_OPTS)
+qemu: $(ELF_KERNEL)
+	qemu-system-arm $(QEMU_OPTS) -kernel $(ELF_KERNEL)
 
-qemu-gdb: myos.elf
-	qemu-system-arm -S -s $(QEMU_OPTS)
+qemu-gdb: $(ELF_KERNEL)
+	qemu-system-arm -S -s $(QEMU_OPTS) -kernel $(ELF_KERNEL)
 
 # kitsune64: linker.ld raspi34-boot.o kernel64.o
 # 	aarch64-elf-gcc -T linker.ld -o $(ELF_KERNEL) -ffreestanding -O2 -nostdlib raspi34-boot.o kernel64.o -lgcc

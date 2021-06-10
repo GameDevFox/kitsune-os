@@ -1,1 +1,1 @@
-add-symbol-file myos.elf
+add-symbol-file kitsune-qemu.elf

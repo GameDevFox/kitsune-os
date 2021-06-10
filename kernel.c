@@ -1,7 +1,39 @@
 #include <stddef.h>
 #include <stdint.h>
 
-static uint32_t MMIO_BASE;
+#include "kernel.h"
+
+void reset_exception() {
+	uart_puts("== RESET EXCEPTION ==\r\n");
+}
+
+void bad_instruction_exception() {
+	uart_puts("== BAD INSTRUCTION EXCEPTION ==\r\n");
+}
+
+void software_interrupt_exception() {
+	uart_puts("== SOFTWARE INTERRUPT ==\r\n");
+}
+
+void instruction_abort_exception() {
+	uart_puts("== INSTRUCTION ABORT EXCEPTION ==\r\n");
+}
+
+void data_abort_exception() {
+	uart_puts("== DATA ABORT EXCEPTION ==\r\n");
+}
+
+void hypervisor_call_exception() {
+	uart_puts("== HYPERVISOR CALL EXCEPTION ==\r\n");
+}
+
+void irq_exception() {
+	uart_puts("== IRQ ==\r\n");
+}
+
+void fiq_exception() {
+	uart_puts("== FIQ ==\r\n");
+}
 
 // The MMIO area base address, depends on board type
 void mmio_init(int raspi)
@@ -26,12 +58,7 @@ uint32_t mmio_read(uint32_t reg)
 	return *(volatile uint32_t*)(MMIO_BASE + reg);
 }
 
-// Loop <delay> times in a way that the compiler won't optimize away
-static void delay(int32_t count)
-{
-	asm volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
-		 : "=r"(count): [count]"0"(count) : "cc");
-}
+static void delay(int32_t count);
 
 enum
 {
@@ -167,19 +194,35 @@ void byte_to_hex(unsigned char b, void (*out)(unsigned char)) {
 	out(secondChar);
 }
 
-void word_to_hex(uint32_t word, void (*out)(unsigned char)) {
+void word_to_hex(size_t word, void (*out)(unsigned char)) {
 	byte_to_hex(word >> 24 & 0xff, out);
 	byte_to_hex(word >> 16 & 0xff, out);
 	byte_to_hex(word >> 8  & 0xff, out);
 	byte_to_hex(word >> 0  & 0xff, out);
 }
 
+void printCycleCounterList() {
+	uart_puts("CYCLE COUNTER LIST:\r\n");
+	size_t prev = 0;
+	for(int i=0; i<8; i++) {
+		size_t* address = 0x40 + i * 4;
+		print_mem(address);
+
+		size_t current = *address;
+		size_t delta = current - prev;
+		prev = current;
+
+		if(i != 0) {
+			uart_puts(" :: ");
+			word_to_hex(delta, uart_putc);
+		}
+
+		uart_puts("\r\n");
+	}
+}
+
 #if defined(__cplusplus)
 extern "C" /* Use C linkage for kernel_main. */
-#endif
-
-#ifndef RASPI_VERSION
-#define RASPI_VERSION 2
 #endif
 
 #ifdef AARCH64
@@ -187,26 +230,76 @@ extern "C" /* Use C linkage for kernel_main. */
 void kernel_main(uint64_t dtb_ptr32, uint64_t x1, uint64_t x2, uint64_t x3)
 #else
 // arguments for AArch32
-void kernel_main(/*uint32_t r0, uint32_t r1, uint32_t atags*/)
+void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 #endif
 {
-	// initialize UART for Raspi2
+	// Initialize UART for Raspberry Pi
 	uart_init(RASPI_VERSION);
 	uart_puts("Hello, Kitsune!\r\n");
-
-	uint32_t pc;
-	asm("mov %0, pc;": "=r"(pc));
-
-	uart_puts("0x");
-	word_to_hex(pc, uart_putc);
 	uart_puts("\r\n");
+
+	// uint32_t pc;
+	// asm("mov %0, pc;": "=r"(pc));
+	// uart_puts("pc:    0x");
+	// word_to_hex(pc, uart_putc);
+	// uart_puts("\r\n");
+
+	// uart_puts("\r\n");
+
+	uart_puts("r0:    0x");
+	word_to_hex(r0, uart_putc);
+	uart_puts("\r\n");
+
+	uart_puts("r1:    0x");
+	word_to_hex(r1, uart_putc);
+	uart_puts("\r\n");
+
+	uart_puts("atags: 0x");
+	word_to_hex(atags, uart_putc);
+	uart_puts("\r\n");
+
+	uart_puts("\r\n");
+
+	printCycleCounterList();
+	uart_puts("\r\n");
+
+	// uart_puts("ATAGS:\r\n");
+	// for(int i=0; i<8; i++) {
+	// 	uint32_t* address = atags + i * 4;
+	// 	print_mem(address);
+	// 	uart_puts("\r\n");
+	// }
+
+	// uart_puts("\r\n");
+
+	uart_puts("END\r\n");
+
+	// for(int i=0xc42; i<=0xc42 + 0x100; i+=4) {
+	// 	print_mem(i);
+	// }
+
+#define SWI(value) "swi #" #value
 
 	while (1) {
 		char input = uart_getc();
 
 		switch(input) {
 			case '1':
-				uart_puts("This is it!!\r\n");
+				uart_puts("Hello, Kitsune!\r\n");
+				break;
+			case '2':
+				asm(SWI(1234));
+				break;
+			case '3':
+				size_t mode = getMode();
+				word_to_hex(mode, uart_putc);
+				uart_puts("\r\n");
+				break;
+			case '4':
+				perfTest();
+				printCycleCounterList();
+				uart_puts("Done\r\n");
+				uart_puts("\r\n");
 				break;
 			case '\r':
 				uart_puts("\r\n");
@@ -221,4 +314,11 @@ void kernel_main(/*uint32_t r0, uint32_t r1, uint32_t atags*/)
 				uart_putc(input);
 		}
 	}
+}
+
+// Loop <delay> times in a way that the compiler won't optimize away
+static void delay(int32_t count)
+{
+	asm volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
+		 : "=r"(count): [count]"0"(count) : "cc");
 }

@@ -2,18 +2,20 @@
 #define RASPI_VERSION 4
 #endif
 
-static uint32_t MMIO_BASE;
-
 // TODO: Move to seperate *.h and *.c file
 size_t getMode();
 size_t perfTest();
+size_t liveInstructionCall();
 
 void uart_puts(const char* str);
+void initialRegisterValues();
 
-uint32_t* addr;
 uint32_t mem;
 
-#define print_mem(addr) mem = *(uint32_t*)addr;\
-	word_to_hex((uint32_t) addr, uart_putc);\
-	uart_puts(": 0x");\
-	word_to_hex(mem, uart_putc);
+#define printAddress(addr, out) mem = *(uint32_t*)addr;\
+	word_to_hex((uint32_t) addr, out);\
+	out(':');\
+	out(' ');\
+	out('0');\
+	out('x');\
+	word_to_hex(mem, out);

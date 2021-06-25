@@ -1,14 +1,7 @@
-// AArch32 mode
-
-#define MODE_MASK 0x1f
-#define SVC_MODE  0x13
-#define HYP_MODE  0x1a
+#include "mode.h"
 
 // To keep this in the first portion of the binary.
 .section ".text.boot"
-
-// Make _start global.
-.globl _start
 
 // Entry point for the kernel.
 // r15 -> should begin execution at 0x8000.
@@ -16,7 +9,13 @@
 // r1 -> 0x00000C42 - machine id
 // r2 -> 0x00000100 - start of ATAGS
 // preserve these registers as argument for kernel_main
+.globl _start
 _start:
+	// Setup the stack.
+	ldr sp, =_start
+
+	// Save r0, r1, r2
+	push {r0-r2}
 
 disable_extra_cores:
 	// Shut off extra cores
@@ -25,10 +24,22 @@ disable_extra_cores:
 	cmp r5, #0
 	bne halt
 
+// misc:
+// 	mov	r7, #0
+// 	mcr	p15, 4, r7, c1, c1, 0	// HCR
+
 check_for_hyp_mode:
 	bl getMode
 	cmp r0, #HYP_MODE
 	bleq switchHypToSvc
+
+// enable_high_exception_vectors:
+// 	mrc p15, 0, r0, c1, c0, 0
+// 	orr r0, #0x00002000
+// 	mcr p15, 0, r0, c1, c0, 0
+
+// 	mov r2, #0xff000000
+// 	orr r2, #0x00ff0000
 
 load_jump_table:
 	adr r1, jump_table
@@ -60,11 +71,9 @@ enable_cycle_counter:
 	// orr r0, r0, #0x8000000 // Write PMXEVTYPER.NSH
 	// mcr p15, 0, r0, c9, c13, 1
 
-	// Setup the stack.
-	ldr r5, =_start
-	mov sp, r5
-
 	// Clear out bss.
+		// TODO: Is this needed in Kitsune since
+		// we plan on having abstracted memory?
 	ldr r4, =__bss_start
 	ldr r9, =__bss_end
 	mov r5, #0
@@ -83,6 +92,10 @@ enable_cycle_counter:
 	blo 1b
 
 	bl perfTest
+
+enter_kernel:
+	// Pop the three registers (r0, r1, r2) we pushed earlier
+	pop {r0, r1, r2}
 
 	// Call kernel_main
 	ldr r3, =kernel_main
@@ -103,8 +116,8 @@ perfTest:
 	mrc p15, 0, r3, c9, c13, 0
 	mrc p15, 0, r4, c9, c13, 0
 	mrc p15, 0, r5, c9, c13, 0
-	mrc p15, 0, r6, c9, c13, 0
-	mrc p15, 0, r7, c9, c13, 0
+	// mrc p15, 0, r6, c9, c13, 0
+	// mrc p15, 0, r7, c9, c13, 0
 
 	mov r12, #0x40
 
@@ -114,8 +127,8 @@ perfTest:
 	str r3, [r12, #0x0c]
 	str r4, [r12, #0x10]
 	str r5, [r12, #0x14]
-	str r6, [r12, #0x18]
-	str r7, [r12, #0x1c]
+	// str r6, [r12, #0x18]
+	// str r7, [r12, #0x1c]
 
 	pop {r0-r7}
 
@@ -124,40 +137,34 @@ perfTest:
 .globl getMode
 getMode:
 	mrs r0, cpsr
-	and r0, r0, #MODE_MASK
+	and r0, r0, #CPSR_MODE_MASK
 	bx lr
 
 .globl switchHypToSvc
 switchHypToSvc:
 	// Update SPSR_hyp
 	mrs r0, CPSR
-	bic r0, #MODE_MASK
+	bic r0, #CPSR_MODE_MASK
 	orr r0, #SVC_MODE
 	msr SPSR_hyp, r0
 
 	// Update ELR_hyp
-	adr r0, fn_end
+	adr r0, 1f
 	msr ELR_hyp, r0
 
-	// Copy lr to LR_svc becaused is banked in SVC
+	// Copy sp and lr to *_svc because
+	// they are banked registers in SVC
 	msr LR_svc, lr
+	msr SP_svc, sp
 
 	eret
-fn_end:
+1:
 	bx lr
 
-// 0x10 USR (User)
-// 0x11 FIQ
-// 0x12 IRQ
-// 0x13 SVC (Supervisor)
-
-// 0x16 MON (Monitor)
-// 0x17 ABT (Abort)
-
-// 0x1a HYP (Hypervisor)
-// 0x1b UND (Undefined)
-
-// 0x1f SYS (System)
+.globl liveInstructionCall
+liveInstructionCall:
+	.word 0xee100f10
+	bx lr
 
 jump_table:
 	ldr pc, [pc, #0x18]
@@ -178,3 +185,8 @@ jump_table_addresses:
 	.word irq_exception
 	.word fiq_exception
 jump_table_addresses_end:
+
+// Allowcate empty space for inital register values
+.globl initialRegisterValues
+initialRegisterValues:
+.space 16 * 4

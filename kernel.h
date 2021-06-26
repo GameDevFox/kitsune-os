@@ -5,7 +5,9 @@
 // TODO: Move to seperate *.h and *.c file
 size_t getMode();
 size_t perfTest();
-size_t liveInstructionCall();
+
+size_t liveFn();
+size_t liveInstruction();
 
 void uart_puts(const char* str);
 void initialRegisterValues();

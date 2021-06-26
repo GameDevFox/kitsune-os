@@ -4,12 +4,35 @@
 #include "kernel.h"
 #include "uart.h"
 
+static char* hexTable = "0123456789abcdef";
+
+void byte_to_hex(unsigned char b, void (*out)(unsigned char)) {
+	unsigned char first4 = (b & 0xf0) >> 4;
+	unsigned char last4 = b & 0xf;
+
+	unsigned char firstChar = hexTable[first4];
+	unsigned char secondChar = hexTable[last4];
+
+	out(firstChar);
+	out(secondChar);
+}
+
+void word_to_hex(size_t word, void (*out)(unsigned char)) {
+	byte_to_hex(word >> 24 & 0xff, out);
+	byte_to_hex(word >> 16 & 0xff, out);
+	byte_to_hex(word >> 8  & 0xff, out);
+	byte_to_hex(word >> 0  & 0xff, out);
+}
+
 void reset_exception() {
 	uart_puts("== RESET EXCEPTION ==\r\n");
 }
 
-void bad_instruction_exception() {
+void bad_instruction_exception(size_t lr) {
 	uart_puts("== BAD INSTRUCTION EXCEPTION ==\r\n");
+
+	word_to_hex(lr - 4, uart_putc);
+	uart_puts("\r\n");
 }
 
 void software_interrupt_exception() {
@@ -34,26 +57,6 @@ void irq_exception() {
 
 void fiq_exception() {
 	uart_puts("== FIQ ==\r\n");
-}
-
-static char* hexTable = "0123456789abcdef";
-
-void byte_to_hex(unsigned char b, void (*out)(unsigned char)) {
-	unsigned char first4 = (b & 0xf0) >> 4;
-	unsigned char last4 = b & 0xf;
-
-	unsigned char firstChar = hexTable[first4];
-	unsigned char secondChar = hexTable[last4];
-
-	out(firstChar);
-	out(secondChar);
-}
-
-void word_to_hex(size_t word, void (*out)(unsigned char)) {
-	byte_to_hex(word >> 24 & 0xff, out);
-	byte_to_hex(word >> 16 & 0xff, out);
-	byte_to_hex(word >> 8  & 0xff, out);
-	byte_to_hex(word >> 0  & 0xff, out);
 }
 
 void printCycleCounterList() {
@@ -193,7 +196,6 @@ void input_loop() {
 
 				char Rt = 0;
 				binaryEntry = generateMRC(
-					// 15, 4, 0, 1, 1, 0
 					coproc, opc1, Rt, CRn, CRm, opc2
 				);
 				word_to_hex(binaryEntry, uart_putc);
@@ -201,10 +203,10 @@ void input_loop() {
 				break;
 			case '!':
 				// Write instruction to our function
-				*(size_t*)(&liveInstructionCall) = binaryEntry;
+				*(size_t*)(&liveInstruction) = binaryEntry;
 
 				// Call function and print result
-				size_t result = liveInstructionCall();
+				size_t result = liveFn();
 				word_to_hex(result, uart_putc);
 				uart_puts("\r\n");
 				break;
@@ -235,6 +237,9 @@ void input_loop() {
 				printCycleCounterList();
 				uart_puts("Done\r\n");
 				uart_puts("\r\n");
+				break;
+			case '5':
+				asm(".word 0xffffffff");
 				break;
 			// case '7':
 			// 	size_t iMasks = uart_getc(UART0_IMSC);

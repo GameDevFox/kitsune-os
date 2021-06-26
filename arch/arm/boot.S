@@ -161,10 +161,27 @@ switchHypToSvc:
 1:
 	bx lr
 
-.globl liveInstructionCall
-liveInstructionCall:
+.globl liveFn
+liveFn:
+	push {r1-r12}
+.globl liveInstruction
+liveInstruction:
 	.word 0xee100f10
+	pop {r1-r12}
 	bx lr
+
+bad_instruction_exception_stub:
+	mov sp, #0x100000
+	push {lr}
+
+	adr r0, 1f
+	bl uart_puts
+
+	pop {lr}
+	eret
+1:
+	.asciz "== This is my SPECIAL Message ==\r\n"
+	.align(5)
 
 jump_table:
 	ldr pc, [pc, #0x18]
@@ -177,7 +194,7 @@ jump_table:
 	ldr pc, [pc, #0x18]
 jump_table_addresses:
 	.word reset_exception
-	.word bad_instruction_exception
+	.word bad_instruction_exception_stub
 	.word software_interrupt_exception
 	.word instruction_abort_exception
 	.word data_abort_exception

@@ -11,10 +11,8 @@
 // preserve these registers as argument for kernel_main
 .globl _start
 _start:
-	// Setup the stack.
+	// Setup the stack and save r0, r1, r2
 	ldr sp, =_start
-
-	// Save r0, r1, r2
 	push {r0-r2}
 
 disable_extra_cores:
@@ -41,17 +39,22 @@ check_for_hyp_mode:
 // 	mov r2, #0xff000000
 // 	orr r2, #0x00ff0000
 
-load_jump_table:
-	adr r1, jump_table
-	mov r2, #0
-	adr r4, jump_table_addresses_end
-1:
-	ldr r0, [r1]
-	str r0, [r2]
-	add r1, r1, #4
-	add r2, r2, #4
-	cmp r1, r4
-	blt 1b
+set_vbar:
+	// Set VBAR to jump table
+	mov r0, #0x2000
+	mcr p15, 0, r0, c12, c0, 0
+
+// load_jump_table:
+// 	adr r1, jump_table
+// 	mov r2, #0
+// 	adr r4, jump_table_addresses_end
+// 1:
+// 	ldr r0, [r1]
+// 	str r0, [r2]
+// 	add r1, r1, #4
+// 	add r2, r2, #4
+// 	cmp r1, r4
+// 	blt 1b
 
 enable_cycle_counter:
 	mrc p15, 0, r0, c9, c12, 1
@@ -170,40 +173,28 @@ liveInstruction:
 	pop {r1-r12}
 	bx lr
 
-bad_instruction_exception_stub:
-	mov sp, #0x100000
-	push {lr}
-
-	adr r0, 1f
-	bl uart_puts
-
-	pop {lr}
-	eret
-1:
-	.asciz "== This is my SPECIAL Message ==\r\n"
-	.align(5)
-
-jump_table:
-	ldr pc, [pc, #0x18]
-	ldr pc, [pc, #0x18]
-	ldr pc, [pc, #0x18]
-	ldr pc, [pc, #0x18]
-	ldr pc, [pc, #0x18]
-	ldr pc, [pc, #0x18]
-	ldr pc, [pc, #0x18]
-	ldr pc, [pc, #0x18]
-jump_table_addresses:
-	.word reset_exception
-	.word bad_instruction_exception_stub
-	.word software_interrupt_exception
-	.word instruction_abort_exception
-	.word data_abort_exception
-	.word hypervisor_call_exception
-	.word irq_exception
-	.word fiq_exception
-jump_table_addresses_end:
+// jump_table:
+// 	ldr pc, [pc, #0x18]
+// 	ldr pc, [pc, #0x18]
+// 	ldr pc, [pc, #0x18]
+// 	ldr pc, [pc, #0x18]
+// 	ldr pc, [pc, #0x18]
+// 	ldr pc, [pc, #0x18]
+// 	ldr pc, [pc, #0x18]
+// 	ldr pc, [pc, #0x18]
+// jump_table_addresses:
+// 	.word reset_exception
+// 	.word undefined_instruction_exception_stub
+// 	.word software_interrupt_exception
+// 	.word instruction_abort_exception
+// 	.word data_abort_exception
+// 	.word hypervisor_call_exception
+// 	.word irq_exception
+// 	.word fiq_exception
+// jump_table_addresses_end:
 
 // Allowcate empty space for inital register values
 .globl initialRegisterValues
 initialRegisterValues:
 .space 16 * 4
+

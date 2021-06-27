@@ -28,37 +28,6 @@ void reset_exception() {
 	uart_puts("== RESET EXCEPTION ==\r\n");
 }
 
-void bad_instruction_exception(size_t lr) {
-	uart_puts("== BAD INSTRUCTION EXCEPTION ==\r\n");
-
-	word_to_hex(lr - 4, uart_putc);
-	uart_puts("\r\n");
-}
-
-void software_interrupt_exception() {
-	uart_puts("== SOFTWARE INTERRUPT ==\r\n");
-}
-
-void instruction_abort_exception() {
-	uart_puts("== INSTRUCTION ABORT EXCEPTION ==\r\n");
-}
-
-void data_abort_exception() {
-	uart_puts("== DATA ABORT EXCEPTION ==\r\n");
-}
-
-void hypervisor_call_exception() {
-	uart_puts("== HYPERVISOR CALL EXCEPTION ==\r\n");
-}
-
-void irq_exception() {
-	uart_puts("== IRQ ==\r\n");
-}
-
-void fiq_exception() {
-	uart_puts("== FIQ ==\r\n");
-}
-
 void printCycleCounterList() {
 	uart_puts("CYCLE COUNTER LIST:\r\n");
 	size_t prev = 0;
@@ -235,22 +204,12 @@ void input_loop() {
 			case '4':
 				perfTest();
 				printCycleCounterList();
-				uart_puts("Done\r\n");
-				uart_puts("\r\n");
+				uart_puts("Done\r\n" "\r\n");
 				break;
 			case '5':
 				asm(".word 0xffffffff");
 				break;
-			// case '7':
-			// 	size_t iMasks = uart_getc(UART0_IMSC);
-			// 	word_to_hex(iMasks, uart_putc);
-			// 	uart_puts("\r\n");
-			// 	iMasks = iMasks & ~((size_t)0x30);
-			// 	uart_putc(UART0_IMSC, iMasks);
-			// 	iMasks = uart_getc(UART0_IMSC);
-			// 	word_to_hex(iMasks, uart_putc);
-			// 	uart_puts("\r\n");
-			// 	break;
+
 			case '0':
 				isPollingEnabled = 0;
 				break;
@@ -322,3 +281,34 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 
 	input_loop();
 }
+
+// void undefined_instruction_exception(size_t lr) {
+// 	uart_puts("== BAD INSTRUCTION EXCEPTION ==\r\n");
+
+// 	word_to_hex(lr - 4, uart_putc);
+// 	uart_puts("\r\n");
+// }
+
+// void software_interrupt_exception() {
+// 	uart_puts("== SOFTWARE INTERRUPT ==\r\n");
+// }
+
+void instruction_abort_exception() {
+	uart_puts("== INSTRUCTION ABORT EXCEPTION ==\r\n");
+}
+
+void data_abort_exception() {
+	uart_puts("== DATA ABORT EXCEPTION ==\r\n");
+}
+
+void hypervisor_call_exception() {
+	uart_puts("== HYPERVISOR CALL EXCEPTION ==\r\n");
+}
+
+// void irq_exception() {
+// 	uart_puts("== IRQ ==\r\n");
+// }
+
+// void fiq_exception() {
+// 	uart_puts("== FIQ ==\r\n");
+// }

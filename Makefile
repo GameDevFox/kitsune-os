@@ -1,6 +1,6 @@
 PREFIX = arm-none-eabi-
 
-OPTIONAL_CFLAGS = -g -Og  -Wall -Wextra
+OPTIONAL_CFLAGS = -g -Og -Wall -Wextra
 CFLAGS = -fpic -ffreestanding -mcpu=cortex-a7 $(OPTIONAL_CFLAGS)
 
 CC = $(PREFIX)gcc $(CFLAGS)
@@ -40,12 +40,13 @@ kernel-qemu.o: $(KERNEL_FILES)
 LINKER_OPTS = -T $(LINKER_FILE) -Xlinker --nmagic -ffreestanding -nostdlib -lgcc
 
 BOOT_PATH = arch/$(ARCH)/$(BOOT_OBJ)
+VECTOR_PATH = arch/$(ARCH)/vector.o
 
-$(ELF_KERNEL): $(LINKER_FILE) $(BOOT_PATH) kernel.o uart.o
-	$(CC) $(CFLAGS) $(LINKER_OPTS) -o $(ELF_KERNEL) $(BOOT_PATH) kernel.o uart.o
+$(ELF_KERNEL): $(LINKER_FILE) $(BOOT_PATH) $(VECTOR_PATH) kernel.o uart.o
+	$(CC) $(CFLAGS) $(LINKER_OPTS) -o $(ELF_KERNEL) $(BOOT_PATH) $(VECTOR_PATH) kernel.o uart.o
 
-$(QEMU_KERNEL): $(LINKER_FILE) $(BOOT_PATH) kernel-qemu.o uart.o
-	$(CC) $(CFLAGS) $(LINKER_OPTS) -o $(QEMU_KERNEL) $(BOOT_PATH) kernel-qemu.o uart.o
+$(QEMU_KERNEL): $(LINKER_FILE) $(BOOT_PATH) $(VECTOR_PATH) kernel-qemu.o uart.o
+	$(CC) $(CFLAGS) $(LINKER_OPTS) -o $(QEMU_KERNEL) $(BOOT_PATH) $(VECTOR_PATH) kernel-qemu.o uart.o
 
 $(BINARY_KERNEL): $(ELF_KERNEL)
 	$(PREFIX)objcopy $(ELF_KERNEL) -O binary $(BINARY_KERNEL)

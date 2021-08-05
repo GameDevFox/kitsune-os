@@ -24,10 +24,6 @@ void word_to_hex(size_t word, void (*out)(unsigned char)) {
 	byte_to_hex(word >> 0  & 0xff, out);
 }
 
-void reset_exception() {
-	uart_puts("== RESET EXCEPTION ==\r\n");
-}
-
 void printCycleCounterList() {
 	uart_puts("CYCLE COUNTER LIST:\r\n");
 	size_t prev = 0;
@@ -64,13 +60,13 @@ void printParams(uint32_t r0, uint32_t r1, uint32_t atags) {
 	uart_puts("\r\n");
 }
 
-#define MRC_BASE 0xee100010
+#define MRC_TEMPLATE 0xee100010
 
 size_t generateMRC(
 	char coproc, char opc1, char Rt,
 	char CRn, char CRm, char opc2
 ) {
-	size_t result = MRC_BASE;
+	size_t result = MRC_TEMPLATE;
 
 	result |= coproc << 8;
 	result |= opc1   << 21;
@@ -85,9 +81,9 @@ size_t generateMRC(
 char charAsHex(char input) {
 	char binary;
 	if(input >= '0' && input <= '9') // Number
-		binary = (input - 0x30);
+		binary = (input - '0');
 	else if(input >= 'a' && input <= 'f') // Letter
-		binary = (input - 0x57);
+		binary = (input - 'a' + 10);
 	else
 		binary = 0xff;
 
@@ -99,7 +95,7 @@ char getb() {
 	return charAsHex(input);
 }
 
-size_t binaryEntry;
+size_t binaryEntry = 0xffff5500;
 
 void binaryEntryMode() {
 	uart_puts("== ENTRY MODE ==\r\n");
@@ -131,6 +127,158 @@ void binaryEntryMode() {
 	}
 
 	uart_puts("== INPUT MODE ==\r\n");
+}
+
+void walkMemory(size_t* start, void (*out)(unsigned char)) {
+	uart_puts("== MEMORY WALK ==\r\n");
+
+	size_t* current = start;
+
+	char increment = 1;
+	while(1) {
+		while(increment) {
+			printAddress(current, out);
+			out('\r');
+			out('\n');
+
+			current++;
+			increment--;
+		}
+
+		char input = uart_getc();
+		if(input == '0' || input == 0x1b) // '0' or Escape
+			break;
+
+		char hex = charAsHex(input);
+		if(hex == 0xff) {
+			increment = 1;
+		} else {
+			increment = hex;
+			uart_puts("--------\r\n");
+		}
+	}
+
+	uart_puts("== WALK FINISHED ==\r\n");
+}
+
+#define FB_BASE 0x3e3cf000
+
+static void fb_write(uint32_t reg, uint32_t data) {
+	*(volatile uint32_t*)(FB_BASE + reg) = data;
+}
+
+const int width = 1920;
+const int height = 1080;
+const int total = width * height;
+
+const int a = 1000;
+const int b = 1080;
+
+const int lenA = a * a;
+const int lenB = b * b;
+
+void fbTest() {
+	uart_puts("== FB TEST ==\r\n");
+
+	for(int y=0; y < height; y++) {
+		for(int x=0; x < width; x++) {
+			int pixel = y * width + x;
+
+			int hyp2 = x * x + y * y;
+
+			if(hyp2 > lenA && hyp2 < lenB) {
+				// uint32_t delta = hyp2 - lenA;
+
+				// word_to_hex(delta, uart_putc);
+				// uart_puts("\r\n");
+
+				// if(delta > 255)
+				// 	delta = 255;
+
+				// uint32_t yellow = delta << 8;
+				// uint32_t color = 0xffff0000 + yellow;
+
+				fb_write(pixel * 4, binaryEntry);
+			}
+		}
+	}
+
+	uart_puts("== FB TEST DONE ==\r\n");
+}
+
+int getPixel(int x, int y) {
+	return y * width + x;
+}
+
+void fbTest2() {
+	uart_puts("== FB TEST 2 ==\r\n");
+
+	int top = 500;
+	int bottom = 800;
+	int left = 1000;
+	int right = 1500;
+
+	for(int i=left; i<right; i++) // top
+		fb_write(getPixel(i, top) * 4, binaryEntry);
+	for(int i=left; i<right; i++) // bottom
+		fb_write(getPixel(i, bottom) * 4, binaryEntry);
+	for(int i=top; i<bottom; i++) // left
+		fb_write(getPixel(left, i) * 4, binaryEntry);
+	for(int i=top; i<bottom; i++) // right
+		fb_write(getPixel(right, i) * 4, binaryEntry);
+
+	uart_puts("== FB TEST 2 DONE ==\r\n");
+}
+
+extern const uint32_t _binary_logo_data_start;
+extern const uint32_t _binary_logo_data_end;
+extern const uint32_t _binary_logo_data_size;
+
+void drawImage(uint32_t* imageData, int width, int height, int xPos, int yPos) {
+
+	for(int y=0; y<height; y++) {
+		for(int x=0; x<width; x++) {
+			uint32_t color = *(imageData++);
+
+			if(!(color >> 24))
+				continue;
+
+			uint32_t newColor = 0xff000000;
+			newColor = newColor | ((color & 0x00ff0000) >> 16);
+			newColor = newColor |  (color & 0x0000ff00);
+			newColor = newColor | ((color & 0x000000ff) << 16);
+
+			// word_to_hex(color, uart_putc); uart_puts("\r\n");
+			// word_to_hex(newColor, uart_putc); uart_puts("\r\n\r\n");
+			fb_write(getPixel(x + xPos, y + yPos) * 4, newColor);
+		}
+	}
+}
+
+void drawLogo() {
+	uart_puts("Drawing logo to frame buffer...");
+
+	// word_to_hex(&_binary_logo_data_start, uart_putc); uart_puts("\r\n");
+	// word_to_hex(&_binary_logo_data_start, uart_putc); uart_puts("\r\n");
+	// word_to_hex(&_binary_logo_data_start, uart_putc); uart_puts("\r\n");
+
+	drawImage(
+		(uint32_t*) &_binary_logo_data_start,
+		168, 256, // width, height
+		876, 412 // x, y
+	);
+
+	uart_puts(" Done!\r\n");
+}
+
+void fbClear() {
+	uart_puts("== FB CLEAR ==\r\n");
+
+	for(int i=0; i<(1080 * 1920); i++) {
+		fb_write(i * 4, 0xff000000);
+	}
+
+	uart_puts("== FB CLEAR DONE ==\r\n");
 }
 
 #define SWI(value) "swi #" #value
@@ -209,9 +357,25 @@ void input_loop() {
 			case '5':
 				asm(".word 0xffffffff");
 				break;
-
+			case '6':
+				fbTest();
+				break;
+			case '7':
+				fbTest2();
+				break;
+			case '9':
+				drawLogo();
+				break;
 			case '0':
-				isPollingEnabled = 0;
+				fbClear();
+				break;
+			// case '0':
+			// 	isPollingEnabled = 0;
+			// 	break;
+
+
+			case 'w':
+				walkMemory((size_t*)binaryEntry, uart_putc);
 				break;
 
 			default:
@@ -277,14 +441,20 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 	// printCycleCounterList();
 	// uart_puts("\r\n");
 
+	drawLogo();
+
 	uart_puts("READY\r\n");
 
 	input_loop();
 }
 
+// void reset_exception() {
+// 	uart_puts("== RESET EXCEPTION ==\r\n");
+// }
+
 // void undefined_instruction_exception(size_t lr) {
 // 	uart_puts("== BAD INSTRUCTION EXCEPTION ==\r\n");
-
+//
 // 	word_to_hex(lr - 4, uart_putc);
 // 	uart_puts("\r\n");
 // }
@@ -297,9 +467,9 @@ void instruction_abort_exception() {
 	uart_puts("== INSTRUCTION ABORT EXCEPTION ==\r\n");
 }
 
-void data_abort_exception() {
-	uart_puts("== DATA ABORT EXCEPTION ==\r\n");
-}
+// void data_abort_exception() {
+// 	uart_puts("== DATA ABORT EXCEPTION ==\r\n");
+// }
 
 void hypervisor_call_exception() {
 	uart_puts("== HYPERVISOR CALL EXCEPTION ==\r\n");

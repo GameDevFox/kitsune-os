@@ -24,10 +24,12 @@ static uint32_t mmio_read(uint32_t reg) {
 	return *(volatile uint32_t*)(MMIO_BASE + reg);
 }
 
+#define ONE "#1"
+
 // Loop <delay> times in a way that the compiler won't optimize away
 static void delay(uint32_t count) {
 	asm volatile(
-		"__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
+		"__delay_%=: subs %[count], %[count], " ONE "; bne __delay_%=\n"
 		 : "=r"(count): [count]"0"(count) : "cc"
 	);
 }

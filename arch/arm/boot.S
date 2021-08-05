@@ -41,7 +41,7 @@ check_for_hyp_mode:
 
 set_vbar:
 	// Set VBAR to jump table
-	mov r0, #0x2000
+	ldr r0, =exception_vector
 	mcr p15, 0, r0, c12, c0, 0
 
 // load_jump_table:
@@ -98,7 +98,7 @@ enable_cycle_counter:
 
 enter_kernel:
 	// Pop the three registers (r0, r1, r2) we pushed earlier
-	pop {r0, r1, r2}
+	pop {r0-r2}
 
 	// Call kernel_main
 	ldr r3, =kernel_main
@@ -172,26 +172,6 @@ liveInstruction:
 	.word 0xee100f10
 	pop {r1-r12}
 	bx lr
-
-// jump_table:
-// 	ldr pc, [pc, #0x18]
-// 	ldr pc, [pc, #0x18]
-// 	ldr pc, [pc, #0x18]
-// 	ldr pc, [pc, #0x18]
-// 	ldr pc, [pc, #0x18]
-// 	ldr pc, [pc, #0x18]
-// 	ldr pc, [pc, #0x18]
-// 	ldr pc, [pc, #0x18]
-// jump_table_addresses:
-// 	.word reset_exception
-// 	.word undefined_instruction_exception_stub
-// 	.word software_interrupt_exception
-// 	.word instruction_abort_exception
-// 	.word data_abort_exception
-// 	.word hypervisor_call_exception
-// 	.word irq_exception
-// 	.word fiq_exception
-// jump_table_addresses_end:
 
 // Allowcate empty space for inital register values
 .globl initialRegisterValues

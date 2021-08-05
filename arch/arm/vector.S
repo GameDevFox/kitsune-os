@@ -1,4 +1,7 @@
 .section ".text.exception_vector"
+
+.globl exception_vector
+exception_vector:
 	b reset_exception
 	b undefined_instruction_exception
 	b software_interrupt_exception
@@ -7,6 +10,19 @@
 	b hypervisor_call_exception
 	b irq_exception
 	b fiq_exception
+
+reset_exception:
+	mov sp, #0x100000
+	push {lr}
+
+	adr r0, reset_str
+	bl uart_puts
+
+	pop {lr}
+	eret
+reset_str:
+	.asciz "== RESET ==\r\n"
+	.align(2)
 
 undefined_instruction_exception:
 	mov sp, #0x100000
@@ -26,7 +42,7 @@ undefined_instruction_exception:
 	pop {lr}
 	eret
 undefined_instruction_str:
-	.asciz "== Undefined  Instruction ==\r\n"
+	.asciz "== UNDEFINED INSTRUCTION ==\r\n"
 	.align(2)
 
 software_interrupt_exception:
@@ -40,6 +56,19 @@ software_interrupt_exception:
 	eret
 software_interrupt_str:
 	.asciz "== SOFTWARE INTERRUPT ==\r\n"
+	.align(2)
+
+data_abort_exception:
+	mov sp, #0x100000
+	push {lr}
+
+	adr r0, data_abort_str
+	bl uart_puts
+
+	pop {lr}
+	eret
+data_abort_str:
+	.asciz "== DATA ABORT EXCEPTION ==\r\n"
 	.align(2)
 
 irq_exception:

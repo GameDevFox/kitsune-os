@@ -42,14 +42,20 @@ LINKER_OPTS = -T $(LINKER_FILE) -Xlinker --nmagic -ffreestanding -nostdlib -lgcc
 BOOT_PATH = arch/$(ARCH)/$(BOOT_OBJ)
 VECTOR_PATH = arch/$(ARCH)/vector.o
 
-$(ELF_KERNEL): $(LINKER_FILE) $(BOOT_PATH) $(VECTOR_PATH) kernel.o uart.o
-	$(CC) $(CFLAGS) $(LINKER_OPTS) -o $(ELF_KERNEL) $(BOOT_PATH) $(VECTOR_PATH) kernel.o uart.o
+KERNEL_STUFF = uart.o image/logo.o
 
-$(QEMU_KERNEL): $(LINKER_FILE) $(BOOT_PATH) $(VECTOR_PATH) kernel-qemu.o uart.o
-	$(CC) $(CFLAGS) $(LINKER_OPTS) -o $(QEMU_KERNEL) $(BOOT_PATH) $(VECTOR_PATH) kernel-qemu.o uart.o
+$(ELF_KERNEL): $(LINKER_FILE) $(BOOT_PATH) $(VECTOR_PATH) kernel.o $(KERNEL_STUFF)
+	$(CC) $(CFLAGS) $(LINKER_OPTS) -o $(ELF_KERNEL) $(BOOT_PATH) $(VECTOR_PATH) kernel.o $(KERNEL_STUFF)
+
+$(QEMU_KERNEL): $(LINKER_FILE) $(BOOT_PATH) $(VECTOR_PATH) kernel-qemu.o $(KERNEL_STUFF)
+	$(CC) $(CFLAGS) $(LINKER_OPTS) -o $(QEMU_KERNEL) $(BOOT_PATH) $(VECTOR_PATH) kernel-qemu.o $(KERNEL_STUFF)
 
 $(BINARY_KERNEL): $(ELF_KERNEL)
 	$(PREFIX)objcopy $(ELF_KERNEL) -O binary $(BINARY_KERNEL)
+
+## Image
+image/%.o: image/%.data
+	cd image && $(PREFIX)ld -r -b binary $*.data -o $*.o
 
 ## QEMU
 QEMU_ARM = qemu-system-arm
@@ -69,7 +75,7 @@ objdump: $(ELF_KERNEL)
 	$(PREFIX)objdump -D $(ELF_KERNEL)
 
 readelf: $(ELF_KERNEL)
-	$(PREFIX)readelf --all $(ELF_KERNEL)
+	$(PREFIX)readelf --all --wide $(ELF_KERNEL)
 
 # kitsune64: linker.ld raspi34-boot.o kernel64.o
 # 	aarch64-elf-gcc -T linker.ld -o $(ELF_KERNEL) -ffreestanding -O2 -nostdlib raspi34-boot.o kernel64.o -lgcc

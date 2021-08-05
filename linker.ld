@@ -2,12 +2,6 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 0x2000;
-    .text.exception_vector :
-    {
-        *(.text.exception_vector)
-    }
-
     /* Starts at LOADER_ADDR. */
     . = 0x8000;
     /* For AArch64, use . = 0x80000; */
@@ -46,6 +40,12 @@ SECTIONS
     . = ALIGN(4096); /* align to page size */
     __bss_end = .;
     __bss_size = __bss_end - __bss_start;
+
+    . = 0x100000;
+    .text.exception_vector :
+    {
+        *(.text.exception_vector)
+    }
 
     __end = .;
 }

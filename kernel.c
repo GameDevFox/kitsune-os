@@ -177,8 +177,32 @@ const int b = 1080;
 const int lenA = a * a;
 const int lenB = b * b;
 
+int getPixel(int x, int y) {
+	return y * width + x;
+}
+
 void fbTest() {
 	uart_puts("== FB TEST ==\r\n");
+
+	int top = 500;
+	int bottom = 800;
+	int left = 1000;
+	int right = 1500;
+
+	for(int i=left; i<right; i++) // top
+		fb_write(getPixel(i, top) * 4, binaryEntry);
+	for(int i=left; i<right; i++) // bottom
+		fb_write(getPixel(i, bottom) * 4, binaryEntry);
+	for(int i=top; i<bottom; i++) // left
+		fb_write(getPixel(left, i) * 4, binaryEntry);
+	for(int i=top; i<bottom; i++) // right
+		fb_write(getPixel(right, i) * 4, binaryEntry);
+
+	uart_puts("== FB TEST DONE ==\r\n");
+}
+
+void fbTest2() {
+	uart_puts("== FB TEST 2 ==\r\n");
 
 	for(int y=0; y < height; y++) {
 		for(int x=0; x < width; x++) {
@@ -203,30 +227,6 @@ void fbTest() {
 		}
 	}
 
-	uart_puts("== FB TEST DONE ==\r\n");
-}
-
-int getPixel(int x, int y) {
-	return y * width + x;
-}
-
-void fbTest2() {
-	uart_puts("== FB TEST 2 ==\r\n");
-
-	int top = 500;
-	int bottom = 800;
-	int left = 1000;
-	int right = 1500;
-
-	for(int i=left; i<right; i++) // top
-		fb_write(getPixel(i, top) * 4, binaryEntry);
-	for(int i=left; i<right; i++) // bottom
-		fb_write(getPixel(i, bottom) * 4, binaryEntry);
-	for(int i=top; i<bottom; i++) // left
-		fb_write(getPixel(left, i) * 4, binaryEntry);
-	for(int i=top; i<bottom; i++) // right
-		fb_write(getPixel(right, i) * 4, binaryEntry);
-
 	uart_puts("== FB TEST 2 DONE ==\r\n");
 }
 
@@ -243,14 +243,7 @@ void drawImage(uint32_t* imageData, int width, int height, int xPos, int yPos) {
 			if(!(color >> 24))
 				continue;
 
-			uint32_t newColor = 0xff000000;
-			newColor = newColor | ((color & 0x00ff0000) >> 16);
-			newColor = newColor |  (color & 0x0000ff00);
-			newColor = newColor | ((color & 0x000000ff) << 16);
-
-			// word_to_hex(color, uart_putc); uart_puts("\r\n");
-			// word_to_hex(newColor, uart_putc); uart_puts("\r\n\r\n");
-			fb_write(getPixel(x + xPos, y + yPos) * 4, newColor);
+			fb_write(getPixel(x + xPos, y + yPos) * 4, color);
 		}
 	}
 }
@@ -372,7 +365,6 @@ void input_loop() {
 			// case '0':
 			// 	isPollingEnabled = 0;
 			// 	break;
-
 
 			case 'w':
 				walkMemory((size_t*)binaryEntry, uart_putc);

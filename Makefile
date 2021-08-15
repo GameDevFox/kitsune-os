@@ -11,7 +11,7 @@ LINKER_FILE = linker.ld
 
 ELF_KERNEL = kitsune.elf
 QEMU_KERNEL = kitsune-qemu.elf
-BINARY_KERNEL = kernel7.img
+BINARY_KERNEL = kitsune.img
 
 BOOT_NAME = boot
 BOOT_OBJ = $(BOOT_NAME).o
@@ -53,7 +53,10 @@ $(QEMU_KERNEL): $(LINKER_FILE) $(BOOT_PATH) $(VECTOR_PATH) kernel-qemu.o $(KERNE
 $(BINARY_KERNEL): $(ELF_KERNEL)
 	$(PREFIX)objcopy $(ELF_KERNEL) -O binary $(BINARY_KERNEL)
 
-## Image
+## Images
+image/%.data: image/%.png
+	magick image/$*.png -separate -swap 0,2 -combine rgba:image/$*.data
+
 image/%.o: image/%.data
 	cd image && $(PREFIX)ld -r -b binary $*.data -o $*.o
 

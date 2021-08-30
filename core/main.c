@@ -1,7 +1,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "kernel.h"
+#include "gic.h"
+#include "hex.h"
+#include "main.h"
+#include "system-timer.h"
+#include "tail.h"
 #include "uart.h"
 
 static char* hexTable = "0123456789abcdef";
@@ -13,8 +17,10 @@ void byte_to_hex(unsigned char b, void (*out)(unsigned char)) {
 	unsigned char firstChar = hexTable[first4];
 	unsigned char secondChar = hexTable[last4];
 
-	out(firstChar);
-	out(secondChar);
+	if(out) {
+		out(firstChar);
+	  out(secondChar);
+	}
 }
 
 void word_to_hex(size_t word, void (*out)(unsigned char)) {
@@ -27,7 +33,7 @@ void word_to_hex(size_t word, void (*out)(unsigned char)) {
 void printCycleCounterList() {
 	uart_puts("CYCLE COUNTER LIST:\r\n");
 	size_t prev = 0;
-	for(int i=0; i<6; i++) {
+	for(int i=0; i<8; i++) {
 		size_t* address = (void*)0x40 + (i * 4);
 		printAddress(address, uart_putc);
 
@@ -76,18 +82,6 @@ size_t generateMRC(
 	result |= opc2   << 5;
 
 	return result;
-}
-
-char charAsHex(char input) {
-	char binary;
-	if(input >= '0' && input <= '9') // Number
-		binary = (input - '0');
-	else if(input >= 'a' && input <= 'f') // Letter
-		binary = (input - 'a' + 10);
-	else
-		binary = 0xff;
-
-	return binary;
 }
 
 char getb() {
@@ -211,17 +205,6 @@ void fbTest2() {
 			int hyp2 = x * x + y * y;
 
 			if(hyp2 > lenA && hyp2 < lenB) {
-				// uint32_t delta = hyp2 - lenA;
-
-				// word_to_hex(delta, uart_putc);
-				// uart_puts("\r\n");
-
-				// if(delta > 255)
-				// 	delta = 255;
-
-				// uint32_t yellow = delta << 8;
-				// uint32_t color = 0xffff0000 + yellow;
-
 				fb_write(pixel * 4, binaryEntry);
 			}
 		}
@@ -252,8 +235,8 @@ void drawLogo() {
 	uart_puts("Drawing logo to frame buffer...");
 
 	// word_to_hex(&_binary_logo_data_start, uart_putc); uart_puts("\r\n");
-	// word_to_hex(&_binary_logo_data_start, uart_putc); uart_puts("\r\n");
-	// word_to_hex(&_binary_logo_data_start, uart_putc); uart_puts("\r\n");
+	// word_to_hex(&_binary_logo_data_end, uart_putc); uart_puts("\r\n");
+	// word_to_hex(&_binary_logo_data_size, uart_putc); uart_puts("\r\n");
 
 	drawImage(
 		(uint32_t*) &_binary_logo_data_start,
@@ -272,6 +255,45 @@ void fbClear() {
 	}
 
 	uart_puts("== FB CLEAR DONE ==\r\n");
+}
+
+size_t uart_getw() {
+	size_t word = 0;
+	word |= (uart_getc() << 0);
+	word |= (uart_getc() << 8);
+	word |= (uart_getc() << 16);
+	word |= (uart_getc() << 24);
+
+	return word;
+}
+
+void readMemory() {
+	size_t size = uart_getw();
+
+	for(size_t i=binaryEntry; i<binaryEntry+size; i++) {
+		char value = *(char*)i;
+		uart_putc(value);
+	}
+}
+
+void writeMemory() {
+	size_t start = uart_getw();
+	size_t size = uart_getw();
+
+	uart_puts("Writing ");
+	word_to_hex(size, uart_putc);
+	uart_puts(" bytes to ");
+	word_to_hex(start, uart_putc);
+	uart_puts(" ...");
+
+	size_t end = start+size;
+
+	for(size_t i=start; i<end; i++) {
+		char value = uart_getc();
+		*(char*)i = value;
+	}
+
+	uart_puts(" Done!\r\n");
 }
 
 #define SWI(value) "swi #" #value
@@ -313,7 +335,7 @@ void input_loop() {
 				break;
 			case '!':
 				// Write instruction to our function
-				*(size_t*)(&liveInstruction) = binaryEntry;
+				*(volatile size_t*)(&liveInstruction) = binaryEntry;
 
 				// Call function and print result
 				size_t result = liveFn();
@@ -338,7 +360,7 @@ void input_loop() {
 				asm(SWI(1234));
 				break;
 			case '3':
-				size_t mode = getMode();
+				size_t mode = getCPSR();
 				word_to_hex(mode, uart_putc);
 				uart_puts("\r\n");
 				break;
@@ -362,12 +384,67 @@ void input_loop() {
 			case '0':
 				fbClear();
 				break;
-			// case '0':
-			// 	isPollingEnabled = 0;
-			// 	break;
+			case '@':
+				uart_puts("Disabled...\r\n");
+				input = 0;
+				isPollingEnabled = 0;
+				break;
 
-			case 'w':
+			case 'q':
+				size_t intMode = enableInt();
+				word_to_hex(intMode, uart_putc);
+				uart_puts("\r\n");
+				break;
+			case 'r':
 				walkMemory((size_t*)binaryEntry, uart_putc);
+				break;
+			case 'w':
+				uart_puts("Enter hex to write to ");
+				word_to_hex(binaryEntry, uart_putc);
+				uart_puts("\r\n");
+
+				uint32_t value = 0;
+				value |= getb() << 0x1c;
+				value |= getb() << 0x18;
+				value |= getb() << 0x14;
+				value |= getb() << 0x10;
+				value |= getb() << 0x0c;
+				value |= getb() << 0x08;
+				value |= getb() << 0x04;
+				value |= getb() << 0x00;
+
+				*(uint32_t*)binaryEntry = value;
+
+				uart_puts("Wrote ");
+				word_to_hex(value, uart_putc);
+				uart_puts("\r\n");
+				break;
+
+			case 'R':
+				readMemory();
+				break;
+			case 'W':
+				writeMemory();
+				break;
+
+			case 't':
+				tailFn();
+				break;
+
+			case 'z':
+				enableIRQ(VC_IRQ_TIMER_1);
+				break;
+			case 'x':
+				routeIRQtoCPUS(VC_IRQ_TIMER_1, 0x01);
+				break;
+			case 'c':
+				uint32_t time = readTimer();
+				word_to_hex(time, uart_putc);
+				uart_puts("\r\n");
+				break;
+			case 'v':
+				writeTimerCompare(1, binaryEntry);
+				uart_puts("Wrote Timer Compare\r\n");
 				break;
 
 			default:
@@ -420,7 +497,7 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 #endif
 {
 	// Initialize UART for Raspberry Pi
-	uart_init(RASPI_VERSION);
+	uart_init();
 
 	uart_puts("Hello, Kitsune!\r\n");
 	uart_puts("\r\n");
@@ -430,47 +507,9 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
 	// uart_puts("DEVICE TREE:\r\n");
 	// memoryRangeOut((size_t*)atags, 32, uart_putc);
 
-	// printCycleCounterList();
-	// uart_puts("\r\n");
-
 	drawLogo();
 
 	uart_puts("READY\r\n");
 
 	input_loop();
 }
-
-// void reset_exception() {
-// 	uart_puts("== RESET EXCEPTION ==\r\n");
-// }
-
-// void undefined_instruction_exception(size_t lr) {
-// 	uart_puts("== BAD INSTRUCTION EXCEPTION ==\r\n");
-//
-// 	word_to_hex(lr - 4, uart_putc);
-// 	uart_puts("\r\n");
-// }
-
-// void software_interrupt_exception() {
-// 	uart_puts("== SOFTWARE INTERRUPT ==\r\n");
-// }
-
-void instruction_abort_exception() {
-	uart_puts("== INSTRUCTION ABORT EXCEPTION ==\r\n");
-}
-
-// void data_abort_exception() {
-// 	uart_puts("== DATA ABORT EXCEPTION ==\r\n");
-// }
-
-void hypervisor_call_exception() {
-	uart_puts("== HYPERVISOR CALL EXCEPTION ==\r\n");
-}
-
-// void irq_exception() {
-// 	uart_puts("== IRQ ==\r\n");
-// }
-
-// void fiq_exception() {
-// 	uart_puts("== FIQ ==\r\n");
-// }

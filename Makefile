@@ -1,64 +1,36 @@
-PREFIX = arm-none-eabi-
-
-OPTIONAL_CFLAGS = -g -Og -Wall -Wextra
-CFLAGS = -fpic -ffreestanding -mcpu=cortex-a7 $(OPTIONAL_CFLAGS)
-
-CC = $(PREFIX)gcc $(CFLAGS)
-
-ARCH = arm
-
-LINKER_FILE = linker.ld
-
-ELF_KERNEL = kitsune.elf
-QEMU_KERNEL = kitsune-qemu.elf
-BINARY_KERNEL = kitsune.img
-
-BOOT_NAME = boot
-BOOT_OBJ = $(BOOT_NAME).o
-BOOT_DIR = arch/$(ARCH)
+include vars.mk
 
 ### TARGETS ###
 all: $(ELF_KERNEL) $(QEMU_KERNEL) $(BINARY_KERNEL)
 
-.PHONY: clean
+BOOT_OBJS = $(subst .S,.o,$(wildcard ./arch/$(ARCH)/*.S))
+CORE_OBJS = $(subst .c,.o,$(wildcard ./core/*.c))
+test: $(BOOT_OBJS) $(CORE_OBJS) image/logo.o config/raspberry-pi-4b.o
+	echo $(OBJCOPY)
+	# $(CC) $(CFLAGS) -T $(LINKER_FILE) -o ./kernel.o $^
+
 clean:
 	find . -type f -name '*.o' -delete
 	rm -rf $(ELF_KERNEL) $(QEMU_KERNEL) $(BINARY_KERNEL)
 
-# include $(BOOT_DIR)/Makefile
+$(ELF_KERNEL): $(LINKER_FILE) $(BOOT_OBJS) $(CORE_OBJS) image/logo.o config/raspberry-pi-4b.o
+	$(CC) $(CFLAGS) -Xlinker $(LDFLAGS) -T $(LINKER_FILE) -o $(ELF_KERNEL) $(BOOT_OBJS) $(CORE_OBJS) image/logo.o config/raspberry-pi-4b.o
 
-## Kernel
-KERNEL_C_FILES = kernel.c
-KERNEL_FILES = $(KERNEL_C_FILES) kernel.h
-
-kernel.o: $(KERNEL_FILES)
-	$(CC) -D RASPI_VERSION="4" $(CFLAGS) -c -o kernel.o $(KERNEL_C_FILES)
-
-kernel-qemu.o: $(KERNEL_FILES)
-	$(CC) -D RASPI_VERSION="2" $(CFLAGS) -c -o kernel-qemu.o $(KERNEL_C_FILES)
-
-LINKER_OPTS = -T $(LINKER_FILE) -Xlinker --nmagic -ffreestanding -nostdlib -lgcc
-
-BOOT_PATH = arch/$(ARCH)/$(BOOT_OBJ)
-VECTOR_PATH = arch/$(ARCH)/vector.o
-
-KERNEL_STUFF = uart.o image/logo.o
-
-$(ELF_KERNEL): $(LINKER_FILE) $(BOOT_PATH) $(VECTOR_PATH) kernel.o $(KERNEL_STUFF)
-	$(CC) $(CFLAGS) $(LINKER_OPTS) -o $(ELF_KERNEL) $(BOOT_PATH) $(VECTOR_PATH) kernel.o $(KERNEL_STUFF)
-
-$(QEMU_KERNEL): $(LINKER_FILE) $(BOOT_PATH) $(VECTOR_PATH) kernel-qemu.o $(KERNEL_STUFF)
-	$(CC) $(CFLAGS) $(LINKER_OPTS) -o $(QEMU_KERNEL) $(BOOT_PATH) $(VECTOR_PATH) kernel-qemu.o $(KERNEL_STUFF)
+$(QEMU_KERNEL): $(LINKER_FILE) $(BOOT_OBJS) $(CORE_OBJS) image/logo.o config/qemu-raspberry-pi-2b.o
+	$(CC) $(CFLAGS) -Xlinker $(LDFLAGS) -T $(LINKER_FILE) -o $(QEMU_KERNEL) $(BOOT_OBJS) $(CORE_OBJS) image/logo.o config/qemu-raspberry-pi-2b.o
 
 $(BINARY_KERNEL): $(ELF_KERNEL)
 	$(PREFIX)objcopy $(ELF_KERNEL) -O binary $(BINARY_KERNEL)
 
-## Images
-image/%.data: image/%.png
-	magick image/$*.png -separate -swap 0,2 -combine rgba:image/$*.data
+# kernel.o: $(BOOT_OBJS) $(CORE_OBJS) image/logo.o config/raspberry-pi-4b.o
+# 	$(CC) $(CFLAGS) -c -o core/kernel.o core/kernel.c
 
-image/%.o: image/%.data
-	cd image && $(PREFIX)ld -r -b binary $*.data -o $*.o
+# kernel-qemu.o: kernel.o: $(BOOT_OBJS) $(CORE_OBJS) image/logo.o config/qemu-raspberry-pi-2b.o
+# 	$(CC) $(CFLAGS) -c -o core/kernel-qemu.o core/kernel.c
+
+# Images
+image/%.o:
+	make -C image $*.o
 
 ## QEMU
 QEMU_ARM = qemu-system-arm
@@ -79,6 +51,12 @@ objdump: $(ELF_KERNEL)
 
 readelf: $(ELF_KERNEL)
 	$(PREFIX)readelf --all --wide $(ELF_KERNEL)
+
+## Tools
+tools:
+	make -C tools
+
+.PHONY: clean tools
 
 # kitsune64: linker.ld raspi34-boot.o kernel64.o
 # 	aarch64-elf-gcc -T linker.ld -o $(ELF_KERNEL) -ffreestanding -O2 -nostdlib raspi34-boot.o kernel64.o -lgcc

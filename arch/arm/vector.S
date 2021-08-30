@@ -1,5 +1,20 @@
 .section ".text.exception_vector"
 
+.macro GENERIC_EXCEPTION name, str
+\name\()_exception:
+	mov sp, #0x100000
+	push {lr}
+
+	adr r0, \name\()_str
+	bl uart_puts
+
+	pop {lr}
+	eret
+\name\()_str:
+  .asciz "== \str ==\r\n"
+  .align(2)
+.endm
+
 .globl exception_vector
 exception_vector:
 	b reset_exception
@@ -11,18 +26,7 @@ exception_vector:
 	b irq_exception
 	b fiq_exception
 
-reset_exception:
-	mov sp, #0x100000
-	push {lr}
-
-	adr r0, reset_str
-	bl uart_puts
-
-	pop {lr}
-	eret
-reset_str:
-	.asciz "== RESET ==\r\n"
-	.align(2)
+GENERIC_EXCEPTION reset, "RESET"
 
 undefined_instruction_exception:
 	mov sp, #0x100000
@@ -45,58 +49,13 @@ undefined_instruction_str:
 	.asciz "== UNDEFINED INSTRUCTION ==\r\n"
 	.align(2)
 
-software_interrupt_exception:
-	mov sp, #0x100000
-	push {lr}
-
-	adr r0, software_interrupt_str
-	bl uart_puts
-
-	pop {lr}
-	eret
-software_interrupt_str:
-	.asciz "== SOFTWARE INTERRUPT ==\r\n"
-	.align(2)
-
-data_abort_exception:
-	mov sp, #0x100000
-	push {lr}
-
-	adr r0, data_abort_str
-	bl uart_puts
-
-	pop {lr}
-	eret
-data_abort_str:
-	.asciz "== DATA ABORT EXCEPTION ==\r\n"
-	.align(2)
-
-irq_exception:
-	mov sp, #0x100000
-	push {lr}
-
-	adr r0, irq_str
-	bl uart_puts
-
-	pop {lr}
-	eret
-irq_str:
-	.asciz "== IRQ ==\r\n"
-	.align(2)
-
-fiq_exception:
-	mov sp, #0x100000
-	push {lr}
-
-	adr r0, fiq_str
-	bl uart_puts
-
-	pop {lr}
-	eret
-fiq_str:
-	.asciz "== FIQ ==\r\n"
-	.align(2)
-
 new_line_str:
 	.asciz "\r\n"
 	.align(2)
+
+GENERIC_EXCEPTION software_interrupt, "SOFTWARE INTERRUPT"
+GENERIC_EXCEPTION instruction_abort, "INSTRUCTION ABORT"
+GENERIC_EXCEPTION data_abort, "DATA ABORT"
+GENERIC_EXCEPTION hypervisor_call, "HYPERVISOR CALL"
+GENERIC_EXCEPTION irq, "IRQ"
+GENERIC_EXCEPTION fiq, "FIQ"

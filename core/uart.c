@@ -1,11 +1,14 @@
 #include <stdint.h>
 
+#include "mem.h"
 #include "uart.h"
+
+extern int raspi;
 
 static uint32_t MMIO_BASE;
 
 // The MMIO area base address, depends on board type
-static void mmio_init(int raspi) {
+static void mmio_init() {
 	switch (raspi) {
 			case 2:
 			case 3:  MMIO_BASE = 0x3f000000; break; // for raspi2 & 3
@@ -16,12 +19,12 @@ static void mmio_init(int raspi) {
 
 // Memory-Mapped I/O output
 static void mmio_write(uint32_t reg, uint32_t data) {
-	*(volatile uint32_t*)(MMIO_BASE + reg) = data;
+	write(MMIO_BASE + reg, data);
 }
 
 // Memory-Mapped I/O input
 static uint32_t mmio_read(uint32_t reg) {
-	return *(volatile uint32_t*)(MMIO_BASE + reg);
+	return read(MMIO_BASE + reg);
 }
 
 #define ONE "#1"
@@ -39,9 +42,8 @@ volatile unsigned int  __attribute__((aligned(16))) mbox[9] = {
     9*4, 0, 0x38002, 12, 8, 2, 3000000, 0 ,0
 };
 
-void uart_init(int raspi)
-{
-	mmio_init(raspi);
+void uart_init() {
+	mmio_init();
 
 	// Disable UART0.
 	mmio_write(UART0_CR, 0x00000000);

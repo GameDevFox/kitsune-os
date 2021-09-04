@@ -5,7 +5,7 @@
 // TODO: Move to seperate *.h and *.c file
 size_t getCPSR();
 size_t getMode();
-size_t enableInt();
+size_t toggle_irqs();
 
 size_t perfTest();
 

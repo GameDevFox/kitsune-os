@@ -15,6 +15,13 @@ enum {
       GICD_IRQ_CLEAR_PENDING = (GICD + 0x200),
 
       GICD_IRQ_PROCESSOR_TARGETS = (GICD + 0x800),
+
+    GICC = (GIC_BASE + 0x2000), // CPU interfaces
+
+      GICC_CTLR = (GICC + 0x0000),
+
+      GICC_IAR = (GICC + 0x000C),
+      GICC_EOIR = (GICC + 0x0010),
 };
 
 enum {

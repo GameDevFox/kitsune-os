@@ -47,13 +47,17 @@ getMode:
 	and r0, r0, #CPSR_MODE_MASK
 	bx lr
 
-.global enableInt
-enableInt:
+.global toggle_irqs
+toggle_irqs:
+	push {lr}
 	mrs r0, cpsr
-	bic r0, #CPSR_DISABLE_FIQ_MASK
-	bic r0, #CPSR_DISABLE_IRQ_MASK
+	eor r0, #CPSR_DISABLE_IRQ_FIQ_MASK
 	msr cpsr, r0
-	bx lr
+	pop {pc}
+
+new_line_str:
+	.asciz "\r\n"
+	.align(2)
 
 .globl switchHypToSvc
 switchHypToSvc:

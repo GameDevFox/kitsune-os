@@ -1,5 +1,5 @@
 uint32_t readTimer();
-uint32_t writeTimerCompare(char timer, uint32_t time);
+void writeTimerCompare(char timer, uint32_t time);
 
 enum {
   SYSTEM_TIMER_BASE = 0xfe003000,

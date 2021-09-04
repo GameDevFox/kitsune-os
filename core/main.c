@@ -391,7 +391,7 @@ void input_loop() {
 				break;
 
 			case 'q':
-				size_t intMode = enableInt();
+				size_t intMode = toggle_irqs();
 				word_to_hex(intMode, uart_putc);
 				uart_puts("\r\n");
 				break;
@@ -428,24 +428,33 @@ void input_loop() {
 				break;
 
 			case 't':
-				tailFn();
-				break;
-
-			case 'z':
-				enableIRQ(VC_IRQ_TIMER_1);
-				break;
-			case 'x':
-				routeIRQtoCPUS(VC_IRQ_TIMER_1, 0x01);
-				break;
-			case 'c':
 				uint32_t time = readTimer();
 				word_to_hex(time, uart_putc);
 				uart_puts("\r\n");
 				break;
-			case 'v':
+			case 'T':
+				tailFn();
+				break;
+
+			case 'z':
+				uart_puts("enableIRQ and routeIRQtoCPUS\r\n");
+				enableIRQ(VC_IRQ_TIMER_1);
+				routeIRQtoCPUS(VC_IRQ_TIMER_1, 0x01);
+				uart_puts("Done\r\n");
+				break;
+			case 'x':
+				uart_puts("writeTimerCompare\r\n");
 				writeTimerCompare(1, binaryEntry);
 				uart_puts("Wrote Timer Compare\r\n");
 				break;
+			case 'c':
+				uart_puts("Set time 3 seconds from now\r\n");
+				uint32_t t = readTimer();
+				writeTimerCompare(1, t + (3 * 1000000));
+				uart_puts("Done\r\n");
+				break;
+			// case 'v':
+			// 	break;
 
 			default:
 				uart_putc(input);

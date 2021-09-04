@@ -1,3 +1,5 @@
+#include "mode.h"
+
 .section ".text.exception_vector"
 
 .macro GENERIC_EXCEPTION name, str
@@ -36,7 +38,7 @@ undefined_instruction_exception:
 	bl uart_puts
 
 	ldr r0, [sp]
-	sub r0, #4
+	sub r0, #8
 	ldr r1, =uart_putc
 	bl word_to_hex
 
@@ -49,13 +51,55 @@ undefined_instruction_str:
 	.asciz "== UNDEFINED INSTRUCTION ==\r\n"
 	.align(2)
 
-new_line_str:
-	.asciz "\r\n"
-	.align(2)
-
 GENERIC_EXCEPTION software_interrupt, "SOFTWARE INTERRUPT"
 GENERIC_EXCEPTION instruction_abort, "INSTRUCTION ABORT"
 GENERIC_EXCEPTION data_abort, "DATA ABORT"
 GENERIC_EXCEPTION hypervisor_call, "HYPERVISOR CALL"
-GENERIC_EXCEPTION irq, "IRQ"
+
+irq_exception:
+	mov sp, #0x100000
+	push {r0-r12, lr}
+
+	// Print SPSR
+	// mrs r0, spsr
+	// ldr r1, =uart_putc
+	// bl word_to_hex
+	// adr r0, new_line_str
+	// bl uart_puts
+
+	adr r0, irq_str // == IRQ ==
+	bl uart_puts
+
+	// Get Interrupt ID
+	mov r1, #0x200c
+	movt r1, #0xff84
+	ldr r0, [r1]
+
+	mov r4, r0
+
+	// Clear Timer 2
+	mov r0, #1
+	bl clearTimerCompare
+
+	// Set End of Interrupt Register
+	mov r1, #0x2010
+	movt r1, #0xff84
+	mov r0, r4
+	str r0, [r1]
+
+	adr r0, end_irq_str // == END IRQ ==
+	bl uart_puts
+
+	pop {r0-r12, lr}
+	subs pc, lr, #4
+irq_str:
+  .asciz "== IRQ ==\r\n"
+end_irq_str:
+	.asciz "== END IRQ ==\r\n"
+  .align(2)
+
 GENERIC_EXCEPTION fiq, "FIQ"
+
+new_line_str:
+	.asciz "\r\n"
+	.align(2)

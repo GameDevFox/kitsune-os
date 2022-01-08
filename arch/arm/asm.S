@@ -1,25 +1,21 @@
+#include "coproc.h"
 #include "mode.h"
 
 .section ".text"
-
-.globl halt
-halt:
-	wfe
-	b halt
 
 .globl perfTest
 perfTest:
 	push {r0-r7}
 
 	// Get cycle count register
-	mrc p15, 0, r0, c9, c13, 0 // Read PMCCNTR
-	mrc p15, 0, r1, c9, c13, 0
-	mrc p15, 0, r2, c9, c13, 0
-	mrc p15, 0, r3, c9, c13, 0
-	mrc p15, 0, r4, c9, c13, 0
-	mrc p15, 0, r5, c9, c13, 0
-	mrc p15, 0, r6, c9, c13, 0
-	mrc p15, 0, r7, c9, c13, 0
+	mrc PMCCNTR(r0)
+	mrc PMCCNTR(r1)
+	mrc PMCCNTR(r2)
+	mrc PMCCNTR(r3)
+	mrc PMCCNTR(r4)
+	mrc PMCCNTR(r5)
+	mrc PMCCNTR(r6)
+	mrc PMCCNTR(r7)
 
 	mov r12, #0x40
 
@@ -47,13 +43,28 @@ getMode:
 	and r0, r0, #CPSR_MODE_MASK
 	bx lr
 
-.global toggle_irqs
-toggle_irqs:
+.globl setMode
+setMode:
+	smc #0
+	msr sp_hyp, sp
+	msr elr_hyp, lr
+	msr cpsr_c, r0
+	bx lr
+
+.global toggleIRQs
+toggleIRQs:
 	push {lr}
 	mrs r0, cpsr
 	eor r0, #CPSR_DISABLE_IRQ_FIQ_MASK
 	msr cpsr, r0
 	pop {pc}
+
+.global enable_cache
+enable_cache:
+	mrc SCTLR(r0)
+	orr r0, #PMCCNTR_C_FLAG
+	mcr SCTLR(r0)
+	bx lr
 
 new_line_str:
 	.asciz "\r\n"

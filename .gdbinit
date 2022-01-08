@@ -1,6 +1,4 @@
+target remote localhost:1234
 add-symbol-file kitsune-qemu.elf
 
-qemu-connect
-
-layout mine
-focus cmd
+set scheduler-locking on

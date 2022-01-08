@@ -6,7 +6,7 @@
 // Entry point for the kernel.
 // r15 -> should begin execution at 0x8000.
 // r0 -> 0x00000000
-// r1 -> 0x00000C42 - machine id
+// r1 -> 0x00000c42 - machine id
 // r2 -> 0x00000100 - start of ATAGS
 // preserve these registers as argument for kernel_main
 .globl _start
@@ -103,3 +103,8 @@ enter_kernel:
 	// Call kernel_main
 	ldr r3, =kernel_main
 	blx r3
+
+.globl halt
+halt:
+	wfe
+	b halt

@@ -103,9 +103,9 @@ void uart_putc(unsigned char c) {
 }
 
 unsigned char uart_getc() {
-    // Wait for UART to have received something.
-    while ( mmio_read(UART0_FR) & (1 << 4) ) { }
-    return mmio_read(UART0_DR);
+  // Wait for UART to have received something.
+  while ( mmio_read(UART0_FR) & (1 << 4) ) { }
+  return mmio_read(UART0_DR);
 }
 
 void uart_puts(const char* str) {

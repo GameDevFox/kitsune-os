@@ -4,8 +4,8 @@
 
 .macro GENERIC_EXCEPTION name, str
 \name\()_exception:
-	mov sp, #0x100000
 	push {lr}
+	mov sp, #0x100000
 
 	adr r0, \name\()_str
 	bl uart_puts
@@ -30,6 +30,40 @@ exception_vector:
 
 GENERIC_EXCEPTION reset, "RESET"
 
+// High
+// (8)  16M
+// 12   1M
+// Mid
+// (16) 64K
+// 20   16K
+// 4K Lower
+
+software_interrupt_exception:
+	push {lr}
+
+	mrc p15, 0, r0, c1, c1, 0 // Read SCR into r0
+	ldr r1, =uart_putc
+	bl wordToHex
+	adr r0, new_line_str
+	bl uart_puts
+
+	adr r0, software_interrupt_str
+	bl uart_puts
+
+	ldr r0, [sp]
+	sub r0, #4
+	ldr r1, =uart_putc
+	bl wordToHex
+
+	adr r0, new_line_str
+	bl uart_puts
+
+	pop {lr}
+	eret
+software_interrupt_str:
+	.asciz "== SOFTWARE INTERRUPT ==\r\n"
+	.align(2)
+
 undefined_instruction_exception:
 	mov sp, #0x100000
 	push {lr}
@@ -40,7 +74,7 @@ undefined_instruction_exception:
 	ldr r0, [sp]
 	sub r0, #8
 	ldr r1, =uart_putc
-	bl word_to_hex
+	bl wordToHex
 
 	adr r0, new_line_str
 	bl uart_puts
@@ -51,7 +85,7 @@ undefined_instruction_str:
 	.asciz "== UNDEFINED INSTRUCTION ==\r\n"
 	.align(2)
 
-GENERIC_EXCEPTION software_interrupt, "SOFTWARE INTERRUPT"
+// GENERIC_EXCEPTION software_interrupt, "SOFTWARE INTERRUPT"
 GENERIC_EXCEPTION instruction_abort, "INSTRUCTION ABORT"
 GENERIC_EXCEPTION data_abort, "DATA ABORT"
 GENERIC_EXCEPTION hypervisor_call, "HYPERVISOR CALL"
@@ -63,7 +97,7 @@ irq_exception:
 	// Print SPSR
 	// mrs r0, spsr
 	// ldr r1, =uart_putc
-	// bl word_to_hex
+	// bl wordToHex
 	// adr r0, new_line_str
 	// bl uart_puts
 

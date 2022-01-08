@@ -1,1 +1,0 @@
-char charAsHex(char input);

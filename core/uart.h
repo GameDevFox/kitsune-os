@@ -1,6 +1,7 @@
 void uart_init();
 void uart_putc(unsigned char c);
-unsigned char uart_getc();
+unsigned char uart_getc(void);
+void uart_getc_pipe();
 
 void uart_puts(const char* str);
 

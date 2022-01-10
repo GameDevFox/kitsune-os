@@ -114,42 +114,6 @@ void writeMemory() {
 int runLoop = 1;
 bool isPollingEnabled = true;
 
-void read_digit(size_t *out, char digit) {
-	*(out) *= 10;
-	char value = digit - 0x30;
-	*(out) += value;
-}
-
-struct Pos {
-  size_t x;
-  size_t y;
-};
-
-struct Pos vtGetPos() {
-  struct Pos pos = { 0, 0 };
-
-  uart_puts(VT_GET_POS);
-
-  char c;
-  do {
-    c = uart_getc();
-  } while(c != '[');
-  c = uart_getc();
-
-  while(c != ';') {
-    read_digit(&pos.x, c);
-    c = uart_getc();
-  }
-  c = uart_getc(c);
-
-  while(c != 'R') {
-    read_digit(&pos.y, c);
-    c = uart_getc(c);
-  }
-
-  return pos;
-}
-
 void backspace() {
 	// TODO: Fix this hacky way, there must be a better way
 	uart_putc('\b');
@@ -273,13 +237,41 @@ void doEnableCache() {
 }
 
 void printCursorPos() {
-  struct Pos pos = vtGetPos();
+  struct VT_Size pos = VT_getPos();
 
-  uart_puts("X: ");
-  wordToHex(pos.x, uart_putc);
-  uart_puts(" Y: ");
-  wordToHex(pos.y, uart_putc);
+  uart_puts("Row: ");
+  wordToHex(pos.row, uart_putc);
+  uart_puts(" Column: ");
+  wordToHex(pos.column, uart_putc);
   uart_puts("\r\n");
+}
+
+void printVTSize() {
+  struct VT_Size size = VT_getSize();
+
+  uart_puts("Rows: ");
+  wordToHex(size.row, uart_putc);
+  uart_puts(" Columns: ");
+  wordToHex(size.column, uart_putc);
+  uart_puts("\r\n");
+}
+
+void printPerformanceCounter() {
+  uart_puts("Performance: ");
+  size_t count = getPerformanceCounter();
+  wordToHex(count, uart_putc);
+  uart_puts(EOL);
+}
+
+void (*charHandler)(char) = NULL;
+
+void input_switch(char);
+
+void rawOutput(char c) {
+  if(c == '\e') // ESCAPE
+    charHandler = input_switch;
+  else
+    uart_putc(c);
 }
 
 void input_switch(char input) {
@@ -311,6 +303,11 @@ void input_switch(char input) {
     case 'a': uart_puts(VT_SAVE VT_HOME VT_RED "Red Text\r\n" VT_DEFAULT VT_LOAD); break;
     case 's': doEnableCache(); break;
     case 'd': printCursorPos(); break;
+    case 'f': printVTSize(); break;
+    case 'g': VT_fill(' '); break;
+    case 'h': VT_fill('X'); break;
+    case 'j': charHandler = rawOutput; break;
+    case 'k': printPerformanceCounter(); break;
 
     case 'z': initIRQ(); break;
     case 'x': writeTimerCompare(1, binaryEntry); break;
@@ -334,14 +331,45 @@ void input_switch(char input) {
   }
 }
 
+size_t lastCount = 0;
+size_t counter = 0;
+
+void runCounter() {
+  size_t count = getPerformanceCounter();
+  count = count / 0x10000000;
+
+  if(count == lastCount)
+    return;
+
+  if(count < lastCount)
+    counter++;
+  else
+    counter += count - lastCount;
+
+  lastCount = count;
+
+  uart_puts(VT_SAVE);
+
+  VT_setPos(0, 0);
+  uart_puts(VT_BG_RED VT_BLACK);
+  write_digits(counter, uart_putc);
+  uart_puts(VT_DEFAULT VT_BG_DEFAULT);
+
+  uart_puts(VT_LOAD);
+}
+
+void processInput() {
+  if(isPollingEnabled)
+      uart_getc_pipe(charHandler);
+}
+
 void input_loop() {
-  char input = 0;
+  charHandler = input_switch;
 
   while (runLoop) {
-    if(isPollingEnabled) {
-      input = uart_getc();
-      input_switch(input);
-    }
+    // List "processes" here
+    runCounter();
+    processInput();
   }
 }
 

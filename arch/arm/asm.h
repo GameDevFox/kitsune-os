@@ -1,6 +1,7 @@
 void enable_cache();
 size_t getCPSR();
 size_t getMode();
+size_t getPerformanceCounter();
 void initialRegisterValues();
 size_t liveFn();
 size_t liveInstruction();

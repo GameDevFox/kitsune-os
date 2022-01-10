@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "mem.h"
@@ -102,10 +103,19 @@ void uart_putc(unsigned char c) {
 	mmio_write(UART0_DR, c);
 }
 
-unsigned char uart_getc() {
+unsigned char uart_getc(void) {
   // Wait for UART to have received something.
   while ( mmio_read(UART0_FR) & (1 << 4) ) { }
   return mmio_read(UART0_DR);
+}
+
+void uart_getc_pipe(void out()) {
+	bool charAvailable = !(mmio_read(UART0_FR) & (1 << 4));
+
+	if(charAvailable) {
+		char c = mmio_read(UART0_DR);
+		out(c);
+	}
 }
 
 void uart_puts(const char* str) {

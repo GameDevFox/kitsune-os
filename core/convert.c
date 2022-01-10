@@ -33,3 +33,28 @@ void wordToHex(size_t word, void (*out)(unsigned char)) {
 	byteToHex(word >> 8  & 0xff, out);
 	byteToHex(word >> 0  & 0xff, out);
 }
+
+void read_digit(size_t *out, char digit) {
+	*(out) *= 10;
+	char value = digit - 0x30;
+	*(out) += value;
+}
+
+void doWriteDigits(size_t value, void (*out)(unsigned char)) {
+	if(!value)
+		return;
+
+	size_t digit = value % 10;
+	char c = hexTable[digit];
+	doWriteDigits(value / 10, out);
+	out(c);
+}
+
+void write_digits(size_t value, void (*out)(unsigned char)) {
+	if(!value) {
+		out('0');
+		return;
+	}
+
+	doWriteDigits(value, out);
+}

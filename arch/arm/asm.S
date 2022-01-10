@@ -32,6 +32,11 @@ perfTest:
 
 	bx lr
 
+.globl getPerformanceCounter
+getPerformanceCounter:
+	mrc PMCCNTR(r0)
+	bx lr
+
 .globl getCPSR
 getCPSR:
 	mrs r0, cpsr

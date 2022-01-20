@@ -27,9 +27,9 @@ disable_extra_cores:
 // 	mcr	p15, 4, r7, c1, c1, 0	// HCR
 
 check_for_hyp_mode:
-	bl getMode
+	bl get_mode
 	cmp r0, #HYP_MODE
-	bleq switchHypToSvc
+	bleq switch_hyp_to_svc
 
 // enable_high_exception_vectors:
 // 	mrc p15, 0, r0, c1, c0, 0
@@ -94,7 +94,7 @@ enable_cycle_counter:
 	cmp r4, r9
 	blo 1b
 
-	bl perfTest
+	bl perf_test
 
 enter_kernel:
 	// Pop the three registers (r0, r1, r2) we pushed earlier

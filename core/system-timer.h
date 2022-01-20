@@ -1,5 +1,7 @@
-uint32_t readTimer();
-void writeTimerCompare(char timer, uint32_t time);
+#include <stdint.h>
+
+uint32_t read_timer();
+void write_timer_compare(char timer, uint32_t time);
 
 enum {
   SYSTEM_TIMER_BASE = 0xfe003000,

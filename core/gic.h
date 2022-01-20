@@ -1,5 +1,5 @@
-void enableIRQ(char irq);
-void routeIRQtoCPUS(char irq, char cpus);
+void enable_irq(char irq);
+void route_irq_to_cpus(char irq, char cpus);
 
 enum {
   GIC_BASE = 0xff840000,

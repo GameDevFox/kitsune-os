@@ -1,0 +1,6 @@
+BasedOnStyle: LLVM
+
+IndentCaseLabels: True
+IndentWidth: 2
+PointerAlignment: Left
+SpaceBeforeParens: Never

@@ -43,7 +43,7 @@ software_interrupt_exception:
 
 	mrc p15, 0, r0, c1, c1, 0 // Read SCR into r0
 	ldr r1, =uart_putc
-	bl wordToHex
+	bl word_to_hex
 	adr r0, new_line_str
 	bl uart_puts
 
@@ -53,7 +53,7 @@ software_interrupt_exception:
 	ldr r0, [sp]
 	sub r0, #4
 	ldr r1, =uart_putc
-	bl wordToHex
+	bl word_to_hex
 
 	adr r0, new_line_str
 	bl uart_puts
@@ -74,7 +74,7 @@ undefined_instruction_exception:
 	ldr r0, [sp]
 	sub r0, #8
 	ldr r1, =uart_putc
-	bl wordToHex
+	bl word_to_hex
 
 	adr r0, new_line_str
 	bl uart_puts
@@ -97,7 +97,7 @@ irq_exception:
 	// Print SPSR
 	// mrs r0, spsr
 	// ldr r1, =uart_putc
-	// bl wordToHex
+	// bl word_to_hex
 	// adr r0, new_line_str
 	// bl uart_puts
 
@@ -113,7 +113,7 @@ irq_exception:
 
 	// Clear Timer 2
 	mov r0, #1
-	bl clearTimerCompare
+	bl clear_timer_compare
 
 	// Set End of Interrupt Register
 	mov r1, #0x2010

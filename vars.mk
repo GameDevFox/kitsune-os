@@ -3,7 +3,7 @@ PREFIX = arm-none-eabi-
 
 OPTIONAL_CFLAGS = -g -Og -Wall -Wextra
 CFLAGS = -fpic -ffreestanding -mcpu=cortex-a7 -nostdlib -lgcc $(OPTIONAL_CFLAGS)
-ASFLAGS = -fpic -ffreestanding -mcpu=cortex-a7 -nostdlib -lgcc $(OPTIONAL_CFLAGS)
+ASFLAGS = $(CFLAGS)
 
 LDFLAGS = --nmagic
 

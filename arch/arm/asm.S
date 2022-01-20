@@ -3,8 +3,8 @@
 
 .section ".text"
 
-.globl perfTest
-perfTest:
+.globl perf_test
+perf_test:
 	push {r0-r7}
 
 	// Get cycle count register
@@ -32,32 +32,32 @@ perfTest:
 
 	bx lr
 
-.globl getPerformanceCounter
-getPerformanceCounter:
+.globl get_performance_counter
+get_performance_counter:
 	mrc PMCCNTR(r0)
 	bx lr
 
-.globl getCPSR
-getCPSR:
+.globl get_cpsr
+get_cpsr:
 	mrs r0, cpsr
 	bx lr
 
-.globl getMode
-getMode:
+.globl get_mode
+get_mode:
 	mrs r0, cpsr
 	and r0, r0, #CPSR_MODE_MASK
 	bx lr
 
-.globl setMode
-setMode:
+.globl set_mode
+set_mode:
 	smc #0
 	msr sp_hyp, sp
 	msr elr_hyp, lr
 	msr cpsr_c, r0
 	bx lr
 
-.global toggleIRQs
-toggleIRQs:
+.global toggle_irqs
+toggle_irqs:
 	push {lr}
 	mrs r0, cpsr
 	eor r0, #CPSR_DISABLE_IRQ_FIQ_MASK
@@ -75,8 +75,8 @@ new_line_str:
 	.asciz "\r\n"
 	.align(2)
 
-.globl switchHypToSvc
-switchHypToSvc:
+.globl switch_hyp_to_svc
+switch_hyp_to_svc:
 	// Update SPSR_hyp
 	mrs r0, CPSR
 	bic r0, #CPSR_MODE_MASK
@@ -96,17 +96,17 @@ switchHypToSvc:
 1:
 	bx lr
 
-.globl liveFn
-liveFn:
+.globl live_fn
+live_fn:
 	push {r1-r12}
-.globl liveInstruction
-liveInstruction:
+.globl live_instruction
+live_instruction:
 	.word 0xee100f10
 	pop {r1-r12}
 	bx lr
 
 // Allowcate empty space for inital register values
-.globl initialRegisterValues
-initialRegisterValues:
+.globl initial_register_values
+initial_register_values:
 .space 16 * 4
 

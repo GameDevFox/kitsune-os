@@ -12,122 +12,122 @@
 #include "mem.h"
 #include "output.h"
 #include "system-timer.h"
-#include "vt.h"
 #include "uart.h"
+#include "vt.h"
 
-extern size_t binaryEntry;
+extern size_t binary_entry;
 
-void printAddress(size_t* addr,  void (*out)(unsigned char)) {
-	wordToHex((uint32_t) addr, out);
+void print_address(size_t* addr, void (*out)(unsigned char)) {
+  word_to_hex((uint32_t)addr, out);
 
-	out(':');
-	out(' ');
-	out('0');
-	out('x');
+  out(':');
+  out(' ');
+  out('0');
+  out('x');
 
-	uint32_t mem = *(uint32_t*) addr;
-	wordToHex(mem, out);
+  uint32_t mem = *(uint32_t*)addr;
+  word_to_hex(mem, out);
 }
 
-void printCycleCounterList() {
-	uart_puts("CYCLE COUNTER LIST:" EOL);
+void print_cycle_counter_list() {
+  uart_puts("CYCLE COUNTER LIST:" EOL);
 
-	size_t prev = 0;
-	for(int i=0; i<8; i++) {
-		size_t* address = (void*)0x40 + (i * 4);
-		printAddress(address, uart_putc);
+  size_t prev = 0;
+  for(int i = 0; i < 8; i++) {
+    size_t* address = (void*)0x40 + (i * 4);
+    print_address(address, uart_putc);
 
-		size_t current = *address;
-		size_t delta = current - prev;
-		prev = current;
+    size_t current = *address;
+    size_t delta = current - prev;
+    prev = current;
 
-		if(i != 0) {
-			uart_puts(" :: ");
-			wordToHex(delta, uart_putc);
-		}
+    if(i != 0) {
+      uart_puts(" :: ");
+      word_to_hex(delta, uart_putc);
+    }
 
-		uart_puts(EOL);
-	}
+    uart_puts(EOL);
+  }
 }
 
-void walkMemory(size_t* start, void (*out)(unsigned char)) {
-	uart_puts("== MEMORY WALK ==" EOL);
+void walk_memory(size_t* start, void (*out)(unsigned char)) {
+  uart_puts("== MEMORY WALK ==" EOL);
 
-	size_t* current = start;
+  size_t* current = start;
 
-	char increment = 1;
-	while(true) {
-		while(increment) {
-			printAddress(current, out);
-			out('\r');
-			out('\n');
+  char increment = 1;
+  while(true) {
+    while(increment) {
+      print_address(current, out);
+      out('\r');
+      out('\n');
 
-			current++;
-			increment--;
-		}
+      current++;
+      increment--;
+    }
 
-		char input = uart_getc();
-		if(input == '0' || input == 0x1b) // '0' or Escape
-			break;
+    char input = uart_getc();
+    if(input == '0' || input == 0x1b) // '0' or Escape
+      break;
 
-		char hex = charAsHex(input);
-		if(hex == 0xff) {
-			increment = 1;
-		} else {
-			increment = hex;
-			uart_puts("--------" EOL);
-		}
-	}
+    char hex = char_as_hex(input);
+    if(hex == 0xff) {
+      increment = 1;
+    } else {
+      increment = hex;
+      uart_puts("--------" EOL);
+    }
+  }
 
-	uart_puts("== WALK FINISHED ==" EOL);
+  uart_puts("== WALK FINISHED ==" EOL);
 }
 
-void readMemory() {
-	size_t size = uart_getw();
+void read_memory() {
+  size_t size = uart_getw();
 
-	for(size_t i=binaryEntry; i<binaryEntry+size; i++) {
-		char value = *(char*)i;
-		uart_putc(value);
-	}
+  for(size_t i = binary_entry; i < binary_entry + size; i++) {
+    char value = *(char*)i;
+    uart_putc(value);
+  }
 }
 
-void writeMemory() {
-	size_t start = uart_getw();
-	size_t size = uart_getw();
+void write_memory() {
+  size_t start = uart_getw();
+  size_t size = uart_getw();
 
-	uart_puts("Writing ");
-	wordToHex(size, uart_putc);
-	uart_puts(" bytes to ");
-	wordToHex(start, uart_putc);
-	uart_puts(" ...");
+  uart_puts("Writing ");
+  word_to_hex(size, uart_putc);
+  uart_puts(" bytes to ");
+  word_to_hex(start, uart_putc);
+  uart_puts(" ...");
 
-	size_t end = start+size;
+  size_t end = start + size;
 
-	for(size_t i=start; i<end; i++) {
-		char value = uart_getc();
-		*(char*)i = value;
-	}
+  for(size_t i = start; i < end; i++) {
+    char value = uart_getc();
+    *(char*)i = value;
+  }
 
-	uart_puts(" Done!" EOL);
+  uart_puts(" Done!" EOL);
 }
 
-int runLoop = 1;
-bool isPollingEnabled = true;
+int run_loop = 1;
+bool is_polling_enabled = true;
 
 void backspace() {
-	// TODO: Fix this hacky way, there must be a better way
-	uart_putc('\b');
-	uart_putc(' ');
-	uart_putc('\b');
+  // TODO: Fix this hacky way, there must be a better way
+  uart_putc('\b');
+  uart_putc(' ');
+  uart_putc('\b');
 }
 
-void printTimer() {
-	uint32_t time = readTimer();
-	wordToHex(time, uart_putc);
-	uart_puts(EOL);
+void print_timer() {
+  uint32_t time = read_timer();
+  word_to_hex(time, uart_putc);
+  uart_puts(EOL);
 }
 
-void generateMRC(bool isMRC) {
+void generate_mrc(bool is_mrc) {
   uart_puts("coproc" EOL);
   char coproc = getb();
   uart_puts("opc1" EOL);
@@ -135,24 +135,22 @@ void generateMRC(bool isMRC) {
   // uart_puts("Rt" EOL);
   // char Rt = getb();
   uart_puts("CRn" EOL);
-  char CRn = getb();
+  char cr_n = getb();
   uart_puts("CRm" EOL);
-  char CRm = getb();
+  char cr_m = getb();
   uart_puts("opc2" EOL);
   char opc2 = getb();
 
-  char Rt = 0;
-  uint32_t flags = isMRC ? ASM_MRC_FLAG : 0;
-  binaryEntry = asm_mrc_mcr(
-    coproc, opc1, Rt, CRn, CRm, opc2, flags
-  );
-  wordToHex(binaryEntry, uart_putc);
+  char rt = 0;
+  uint32_t flags = is_mrc ? ASM_MRC_FLAG : 0;
+  binary_entry = asm_mrc_mcr(coproc, opc1, rt, cr_n, cr_m, opc2, flags);
+  word_to_hex(binary_entry, uart_putc);
   uart_puts(EOL);
 }
 
-void writeWord() {
+void write_word() {
   uart_puts("Enter hex to write to ");
-  wordToHex(binaryEntry, uart_putc);
+  word_to_hex(binary_entry, uart_putc);
   uart_puts(EOL);
 
   uint32_t value = 0;
@@ -165,192 +163,135 @@ void writeWord() {
   value |= getb() << 0x04;
   value |= getb() << 0x00;
 
-  *(uint32_t*)binaryEntry = value;
+  *(uint32_t*)binary_entry = value;
 
   uart_puts("Wrote ");
-  wordToHex(value, uart_putc);
+  word_to_hex(value, uart_putc);
   uart_puts(EOL);
 }
 
-void initIRQ() {
-	uart_puts("enableIRQ and routeIRQtoCPUS" EOL);
-	enableIRQ(VC_IRQ_TIMER_1);
-	routeIRQtoCPUS(VC_IRQ_TIMER_1, 0x01);
-	uart_puts("Done" EOL);
-}
-
-void in3Seconds() {
-  uart_puts("Set time 3 seconds from now" EOL);
-  uint32_t t = readTimer();
-  writeTimerCompare(1, t + (3 * 1000000));
+void init_irq() {
+  uart_puts("enableIRQ and routeIRQtoCPUS" EOL);
+  enable_irq(VC_IRQ_TIMER_1);
+  route_irq_to_cpus(VC_IRQ_TIMER_1, 0x01);
   uart_puts("Done" EOL);
 }
 
-void printCPSR() {
-  size_t mode = getCPSR();
-  wordToHex(mode, uart_putc);
+void in_3_seconds() {
+  uart_puts("Set time 3 seconds from now" EOL);
+  uint32_t t = read_timer();
+  write_timer_compare(1, t + (3 * 1000000));
+  uart_puts("Done" EOL);
+}
+
+void print_cpsr() {
+  size_t mode = get_cpsr();
+  word_to_hex(mode, uart_putc);
   uart_puts(EOL);
 }
 
-void performanceTest() {
-  perfTest();
-  printCycleCounterList();
+void performance_test() {
+  perf_test();
+  print_cycle_counter_list();
   uart_puts("Done" EOL EOL);
 }
 
-void callInstruction() {
+void call_instruction() {
   // Write instruction to our function
-  *(volatile size_t*)(&liveInstruction) = binaryEntry;
+  *(volatile size_t*)(&live_instruction) = binary_entry;
 
   // Call function and print result
-  size_t result = liveFn();
-  wordToHex(result, uart_putc);
+  size_t result = live_fn();
+  word_to_hex(result, uart_putc);
   uart_puts(EOL);
 }
 
-void doHalt() {
-  runLoop = 0;
+void do_halt() {
+  run_loop = 0;
   uart_puts("HALT" EOL);
 }
 
-void disablePolling() {
+void disable_polling() {
   uart_puts("Disabled..." EOL);
-  isPollingEnabled = 0;
+  is_polling_enabled = 0;
 }
 
-void doToggleIRQ() {
-  size_t intMode = toggleIRQs();
-  wordToHex(intMode, uart_putc);
+void do_toggle_irq() {
+  size_t int_mode = toggle_irqs();
+  word_to_hex(int_mode, uart_putc);
   uart_puts(EOL);
 }
 
-void doSetMode() {
-  setMode(binaryEntry);
-  binaryEntry = getCPSR();
-  wordToHex(binaryEntry, uart_putc);
+void do_set_mode() {
+  set_mode(binary_entry);
+  binary_entry = get_cpsr();
+  word_to_hex(binary_entry, uart_putc);
   uart_puts(EOL);
 }
 
-void doEnableCache() {
+void do_enable_cache() {
   enable_cache();
   uart_puts("Cache enabled" EOL);
 }
 
-void printCursorPos() {
-  struct VT_Size pos = VT_getPos();
+void print_cursor_pos() {
+  struct VT_Size pos = vt_get_pos();
 
   uart_puts("Row: ");
-  wordToHex(pos.row, uart_putc);
+  word_to_hex(pos.row, uart_putc);
   uart_puts(" Column: ");
-  wordToHex(pos.column, uart_putc);
+  word_to_hex(pos.column, uart_putc);
   uart_puts(EOL);
 }
 
-void printVTSize() {
-  struct VT_Size size = VT_getSize();
+void print_vt_size() {
+  struct VT_Size size = vt_get_size();
 
   uart_puts("Rows: ");
-  wordToHex(size.row, uart_putc);
+  word_to_hex(size.row, uart_putc);
   uart_puts(" Columns: ");
-  wordToHex(size.column, uart_putc);
+  word_to_hex(size.column, uart_putc);
   uart_puts(EOL);
 }
 
-void printPerformanceCounter() {
+void print_performance_counter() {
   uart_puts("Performance: ");
-  size_t count = getPerformanceCounter();
-  wordToHex(count, uart_putc);
+  size_t count = get_performance_counter();
+  word_to_hex(count, uart_putc);
   uart_puts(EOL);
 }
 
-void (*charHandler)(char) = NULL;
+void (*char_handler)(char) = NULL;
 
-void input_switch(char);
+void command_handler(char);
 
-void rawOutput(char c) {
+void raw_output(char c) {
   if(c == '\e') // ESCAPE
-    charHandler = input_switch;
+    char_handler = command_handler;
   else
     uart_putc(c);
 }
 
-void input_switch(char input) {
-  switch(input) {
-    case '`': generateMRC(1); break;
-    case '~': generateMRC(0); break;
-
-    case '1': uart_puts("Hello, Kitsune!" EOL); break;
-    case '2': asm(SWI(1234)); break;
-    case '3': printCPSR(); break;
-    case '4': performanceTest(); break;
-    case '5': asm(".word 0xffffffff"); break;
-    case '6': fbTest(); break;
-    case '7': fbTest2(); break;
-    case '9': drawLogo(); break;
-    case '0': fbClear(); break;
-
-    case '!': callInstruction(); break;
-    case '@': disablePolling(); break;
-
-    case '=': binaryEntryMode(); break;
-
-    case 'q': doToggleIRQ(); break;
-    case 'w': writeWord(); break;
-
-    case 'r': walkMemory((size_t*)binaryEntry, uart_putc); break;
-    case 't': printTimer(); break;
-
-    case 'a': uart_puts(VT_SAVE VT_HOME VT_RED "Red Text\r\n" VT_DEFAULT VT_LOAD); break;
-    case 's': doEnableCache(); break;
-    case 'd': printCursorPos(); break;
-    case 'f': printVTSize(); break;
-    case 'g': VT_fill(' '); break;
-    case 'h': VT_fill('X'); break;
-    case 'j': charHandler = rawOutput; break;
-    case 'k': printPerformanceCounter(); break;
-
-    case 'z': initIRQ(); break;
-    case 'x': writeTimerCompare(1, binaryEntry); break;
-    case 'c': in3Seconds(); break;
-
-    case 'b': doHalt(); break;
-
-    case 'm': doSetMode(); break;
-
-    case 'W': writeMemory(); break;
-    case 'R': readMemory(); break;
-
-    // ENTER
-    case 0x0d: uart_puts("\r\n"); break;
-    // DEL
-    case 0x7f: backspace(); break;
-
-    default:
-      uart_putc(input);
-      break;
-  }
-}
-
-size_t lastCount = 0;
+size_t last_count = 0;
 size_t counter = 0;
 
-void runCounter() {
-  size_t count = getPerformanceCounter();
+void run_counter() {
+  size_t count = get_performance_counter();
   count = count / 0x10000000;
 
-  if(count == lastCount)
+  if(count == last_count)
     return;
 
-  if(count < lastCount)
+  if(count < last_count)
     counter++;
   else
-    counter += count - lastCount;
+    counter += count - last_count;
 
-  lastCount = count;
+  last_count = count;
 
   uart_puts(VT_SAVE);
 
-  VT_setPos(1, 2);
+  vt_set_pos(1, 2);
   uart_puts(VT_BG_RED VT_BLACK);
   write_digits(counter, uart_putc);
   uart_puts(VT_DEFAULT VT_BG_DEFAULT);
@@ -362,57 +303,57 @@ void runCounter() {
 #define ESCAPE 0x1b
 #define BACKSPACE 0x7f
 
-void mainHandler(char);
-void setInputHandler(void (*handler)(char));
+void main_handler(char);
+void set_input_handler(void (*handler)(char));
 
-void (*inputHandler)(char) = mainHandler;
+void (*input_handler)(char) = main_handler;
 
-void rawHandler(char c) {
-  byteToHex(c, uart_putc);
+void raw_handler(char c) {
+  byte_to_hex(c, uart_putc);
   uart_putc(' ');
 }
 
-void commandHandler(char input) {
+void command_handler(char input) {
   switch(input) {
-    case '`': generateMRC(1); break;
-    case '~': generateMRC(0); break;
+    case '`': generate_mrc(1); break;
+    case '~': generate_mrc(0); break;
 
     case '1': uart_puts("Hello, Kitsune!" EOL); break;
     case '2': asm(SWI(1234)); break;
-    case '3': printCPSR(); break;
-    case '4': performanceTest(); break;
+    case '3': print_cpsr(); break;
+    case '4': performance_test(); break;
     case '5': asm(".word 0xffffffff"); break;
-    case '6': fbTest(); break;
-    case '7': fbTest2(); break;
-    case '9': drawLogo(); break;
-    case '0': fbClear(); break;
+    case '6': fb_test(); break;
+    case '7': fb_test_2(); break;
+    case '9': draw_logo(); break;
+    case '0': fb_clear(); break;
 
-    case '!': callInstruction(); break;
-    case '@': disablePolling(); break;
-    case '=': binaryEntryMode(); break;
+    case '!': call_instruction(); break;
+    case '@': disable_polling(); break;
+    case '=': binary_entry_mode(); break;
 
-    case 'q': doToggleIRQ(); break;
-    case 'w': writeWord(); break;
-    case 'r': walkMemory((size_t*)binaryEntry, uart_putc); break;
-    case 't': printTimer(); break;
+    case 'q': do_toggle_irq(); break;
+    case 'w': write_word(); break;
+    case 'r': walk_memory((size_t*)binary_entry, uart_putc); break;
+    case 't': print_timer(); break;
 
     case 'a': uart_puts(VT_SAVE VT_HOME VT_RED "Red Text" EOL VT_DEFAULT VT_LOAD); break;
-    case 's': doEnableCache(); break;
-    case 'd': printCursorPos(); break;
-    case 'f': printVTSize(); break;
-    case 'h': VT_fill('X'); break;
-    case 'j': setInputHandler(rawHandler); break;
-    case 'k': printPerformanceCounter(); break;
-    case 'l': VT_fill(' '); break;
+    case 's': do_enable_cache(); break;
+    case 'd': print_cursor_pos(); break;
+    case 'f': print_vt_size(); break;
+    case 'h': print_performance_counter(); break;
+    case 'j': set_input_handler(raw_handler); break;
+    case 'k': vt_fill('X'); break;
+    case 'l': vt_fill(' '); break;
 
-    case 'z': initIRQ(); break;
-    case 'x': writeTimerCompare(1, binaryEntry); break;
-    case 'c': in3Seconds(); break;
-    case 'b': doHalt(); break;
-    case 'm': doSetMode(); break;
+    case 'z': init_irq(); break;
+    case 'x': write_timer_compare(1, binary_entry); break;
+    case 'c': in_3_seconds(); break;
+    case 'b': do_halt(); break;
+    case 'm': do_set_mode(); break;
 
-    case 'W': writeMemory(); break;
-    case 'R': readMemory(); break;
+    case 'W': write_memory(); break;
+    case 'R': read_memory(); break;
 
     default:
       uart_putc(input);
@@ -420,15 +361,15 @@ void commandHandler(char input) {
   }
 }
 
-void singleCommandHandler(char c) {
-  setInputHandler(mainHandler);
-  commandHandler(c);
+void single_command_handler(char c) {
+  set_input_handler(main_handler);
+  command_handler(c);
 }
 
-void mainHandler(char c) {
+void main_handler(char c) {
   switch(c) {
-    case '`': setInputHandler(singleCommandHandler); break;
-    case '~': setInputHandler(commandHandler); break;
+    case '`': set_input_handler(single_command_handler); break;
+    case '~': set_input_handler(command_handler); break;
 
     case ENTER: uart_puts(EOL); break;
     case BACKSPACE: backspace(); break;
@@ -439,82 +380,82 @@ void mainHandler(char c) {
   }
 }
 
-void rootHandler(char c) {
+void root_handler(char c) {
   if(c == ESCAPE)
-    setInputHandler(mainHandler);
+    set_input_handler(main_handler);
   else
-    inputHandler(c);
+    input_handler(c);
 }
 
-void setInputHandler(void (*handler)(char)) {
+void set_input_handler(void (*handler)(char)) {
   char* label;
 
   char* color = VT_WHITE;
-  char* bgColor = VT_BG_RED;
+  char* bg_color = VT_BG_RED;
 
-  if(handler == mainHandler) {
+  if(handler == main_handler) {
     label = "Normal Mode";
     color = VT_BLACK;
-    bgColor = VT_BG_GREEN;
+    bg_color = VT_BG_GREEN;
   }
-  if(handler == singleCommandHandler)
+  if(handler == single_command_handler)
     label = "Single Command Mode";
-  if(handler == commandHandler)
+  if(handler == command_handler)
     label = "Command Mode";
-  if(handler == rawHandler)
+  if(handler == raw_handler)
     label = "Raw Mode";
 
   uart_puts(VT_SAVE);
 
-  // struct VT_Size size = VT_getSize();
-  VT_setPos(1, 1);
+  // struct VT_Size size = vt_get_size();
+  vt_set_pos(1, 1);
 
   uart_puts(color);
-  uart_puts(bgColor);
+  uart_puts(bg_color);
   uart_puts(" == ");
   uart_puts(label);
   uart_puts(" == " EOL VT_DEFAULT VT_BG_DEFAULT);
 
   uart_puts(VT_LOAD);
 
-  inputHandler = handler;
+  input_handler = handler;
 }
 
-void processInput() {
-  if(isPollingEnabled)
-    uart_getc_pipe(rootHandler);
+void process_input() {
+  if(is_polling_enabled)
+    uart_getc_pipe(root_handler);
 }
 
 void input_loop() {
-  while (runLoop) {
+  while(run_loop) {
     // List "processes" here
-    runCounter();
-    processInput();
+    run_counter();
+    process_input();
   }
 }
 
-void memoryRangeOut(size_t* start, size_t count, void (*out)(unsigned char)) {
+void memory_range_out(size_t* start, size_t count, void (*out)(unsigned char)) {
   size_t* end = start + count;
 
   for(size_t* i = start; i < end; i++) {
-    printAddress(i, out);
+    print_address(i, out);
     uart_puts(EOL);
   }
 
   uart_puts(EOL);
 }
 
-void printParams(uint32_t r0, uint32_t r1, uint32_t atags) {
+void print_params(uint32_t r0, uint32_t r1, uint32_t atags) {
   uart_puts("r0:    0x");
-  wordToHex(r0, uart_putc);
+  word_to_hex(r0, uart_putc);
   uart_puts(EOL);
 
   uart_puts("r1:    0x");
-  wordToHex(r1, uart_putc);
+  word_to_hex(r1, uart_putc);
   uart_puts(EOL);
 
   uart_puts("atags: 0x");
-  wordToHex(atags, uart_putc);
+  word_to_hex(atags, uart_putc);
   uart_puts(EOL);
 
   uart_puts(EOL);
@@ -538,12 +479,12 @@ void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
   uart_puts("Hello, Kitsune!" EOL);
   uart_puts(EOL);
 
-  printParams(r0, r1, atags);
+  print_params(r0, r1, atags);
 
   // uart_puts("DEVICE TREE:" EOL);
-  // memoryRangeOut((size_t*)atags, 32, uart_putc);
+  // memory_range_out((size_t*)atags, 32, uart_putc);
 
-  drawLogo();
+  draw_logo();
 
   uart_puts("READY" EOL);
 

@@ -10,11 +10,11 @@ static uint32_t MMIO_BASE;
 
 // The MMIO area base address, depends on board type
 static void mmio_init() {
-  switch (raspi) {
-      case 2:
-      case 3:  MMIO_BASE = 0x3f000000; break; // for raspi2 & 3
-      case 4:  MMIO_BASE = 0xfe000000; break; // for raspi4
-      default: MMIO_BASE = 0x20000000; break; // for raspi1, raspi zero etc.
+  switch(raspi) {
+    case 2:
+    case 3:  MMIO_BASE = 0x3f000000; break; // for raspi2 & 3
+    case 4:  MMIO_BASE = 0xfe000000; break; // for raspi4
+    default: MMIO_BASE = 0x20000000; break; // for raspi1, raspi zero etc.
   }
 }
 
@@ -40,7 +40,7 @@ static void delay(uint32_t count) {
 
 // A Mailbox message with set clock rate of PL011 to 3MHz tag
 volatile unsigned int  __attribute__((aligned(16))) mbox[9] = {
-  9*4, 0, 0x38002, 12, 8, 2, 3000000, 0 ,0
+  9 * 4, 0, 0x38002, 12, 8, 2, 3000000, 0 ,0
 };
 
 void uart_init() {
@@ -71,14 +71,14 @@ void uart_init() {
 
   // For Raspi3 and 4 the UART_CLOCK is system-clock dependent by default.
   // Set it to 3Mhz so that we can consistently set the baud rate
-  if (raspi >= 3) {
+  if(raspi >= 3) {
     // UART_CLOCK = 30000000;
     unsigned int r = (((unsigned int)(&mbox) & ~0xF) | 8);
     // wait until we can talk to the VC
-    while ( mmio_read(MBOX_STATUS) & 0x80000000 ) { }
+    while(mmio_read(MBOX_STATUS) & 0x80000000) {}
     // send our message to property channel and wait for the response
     mmio_write(MBOX_WRITE, r);
-    while ( (mmio_read(MBOX_STATUS) & 0x40000000) || mmio_read(MBOX_READ) != r ) { }
+    while((mmio_read(MBOX_STATUS) & 0x40000000) || mmio_read(MBOX_READ) != r) {}
   }
 
   // Divider = 3000000 / (16 * 115200) = 1.627 = ~1.
@@ -99,26 +99,26 @@ void uart_init() {
 
 void uart_putc(unsigned char c) {
   // Wait for UART to become ready to transmit.
-  while ( mmio_read(UART0_FR) & (1 << 5) ) { }
+  while(mmio_read(UART0_FR) & (1 << 5)) {}
   mmio_write(UART0_DR, c);
 }
 
 unsigned char uart_getc(void) {
   // Wait for UART to have received something.
-  while ( mmio_read(UART0_FR) & (1 << 4) ) { }
+  while(mmio_read(UART0_FR) & (1 << 4)) {}
   return mmio_read(UART0_DR);
 }
 
 void uart_getc_pipe(void out()) {
-  bool charAvailable = !(mmio_read(UART0_FR) & (1 << 4));
+  bool char_available = !(mmio_read(UART0_FR) & (1 << 4));
 
-  if(charAvailable) {
+  if(char_available) {
     char c = mmio_read(UART0_DR);
     out(c);
   }
 }
 
 void uart_puts(const char* str) {
-  for (uint32_t i = 0; str[i] != '\0'; i++)
+  for(uint32_t i = 0; str[i] != '\0'; i++)
     uart_putc((unsigned char)str[i]);
 }

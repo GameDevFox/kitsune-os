@@ -1,60 +1,60 @@
 #include <stddef.h>
 
-char* hexTable = "0123456789abcdef";
+char* hex_table = "0123456789abcdef";
 
-char charAsHex(char input) {
-	char binary;
-	if(input >= '0' && input <= '9') // Number
-		binary = (input - '0');
-	else if(input >= 'a' && input <= 'f') // Letter
-		binary = (input - 'a' + 10);
-	else
-		binary = 0xff;
+char char_as_hex(char input) {
+  char binary;
+  if(input >= '0' && input <= '9') // Number
+    binary = (input - '0');
+  else if(input >= 'a' && input <= 'f') // Letter
+    binary = (input - 'a' + 10);
+  else
+    binary = 0xff;
 
-	return binary;
+  return binary;
 }
 
-void byteToHex(unsigned char b, void (*out)(unsigned char)) {
-	unsigned char first4 = (b & 0xf0) >> 4;
-	unsigned char last4 = b & 0xf;
+void byte_to_hex(unsigned char b, void (*out)(unsigned char)) {
+  unsigned char first4 = (b & 0xf0) >> 4;
+  unsigned char last4 = b & 0xf;
 
-	unsigned char firstChar = hexTable[first4];
-	unsigned char secondChar = hexTable[last4];
+  unsigned char first_char = hex_table[first4];
+  unsigned char second_char = hex_table[last4];
 
-	if(out) {
-		out(firstChar);
-	  out(secondChar);
-	}
+  if(out) {
+    out(first_char);
+    out(second_char);
+  }
 }
 
-void wordToHex(size_t word, void (*out)(unsigned char)) {
-	byteToHex(word >> 24 & 0xff, out);
-	byteToHex(word >> 16 & 0xff, out);
-	byteToHex(word >> 8  & 0xff, out);
-	byteToHex(word >> 0  & 0xff, out);
+void word_to_hex(size_t word, void (*out)(unsigned char)) {
+  byte_to_hex(word >> 24 & 0xff, out);
+  byte_to_hex(word >> 16 & 0xff, out);
+  byte_to_hex(word >> 8 & 0xff, out);
+  byte_to_hex(word >> 0 & 0xff, out);
 }
 
-void read_digit(size_t *out, char digit) {
-	*(out) *= 10;
-	char value = digit - 0x30;
-	*(out) += value;
+void read_digit(size_t* out, char digit) {
+  *(out) *= 10;
+  char value = digit - 0x30;
+  *(out) += value;
 }
 
-void doWriteDigits(size_t value, void (*out)(unsigned char)) {
-	if(!value)
-		return;
+void do_write_digits(size_t value, void (*out)(unsigned char)) {
+  if(!value)
+    return;
 
-	size_t digit = value % 10;
-	char c = hexTable[digit];
-	doWriteDigits(value / 10, out);
-	out(c);
+  size_t digit = value % 10;
+  char c = hex_table[digit];
+  do_write_digits(value / 10, out);
+  out(c);
 }
 
 void write_digits(size_t value, void (*out)(unsigned char)) {
-	if(!value) {
-		out('0');
-		return;
-	}
+  if(!value) {
+    out('0');
+    return;
+  }
 
-	doWriteDigits(value, out);
+  do_write_digits(value, out);
 }

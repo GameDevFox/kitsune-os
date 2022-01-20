@@ -2,21 +2,21 @@
 #include "mem.h"
 #include "uart.h"
 
-void enableIRQ(char irq) {
+void enable_irq(char irq) {
   uint32_t* addr = (uint32_t*)GICD_IRQ_SET_ENABLE + (irq / 32);
   uint32_t word = 1 << (irq % 32);
 
   write(addr, word);
 }
 
-void disableIRQ(char irq) {
+void disable_irq(char irq) {
   uint32_t* addr = (uint32_t*)GICD_IRQ_CLEAR_ENABLE + (irq / 32);
   uint32_t word = 1 << (irq % 32);
 
   write(addr, word);
 }
 
-void routeIRQtoCPUS(char irq, char cpus) {
+void route_irq_to_cpus(char irq, char cpus) {
   uint32_t* addr = (uint32_t*)GICD_IRQ_PROCESSOR_TARGETS + (irq / 4);
 
   uint32_t word = read(addr);

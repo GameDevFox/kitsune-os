@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #define VT_SAVE "\e7"
 #define VT_LOAD "\e8"
 
@@ -39,7 +41,7 @@ struct VT_Size {
   size_t column;
 };
 
-struct VT_Size VT_getPos();
-void VT_setPos(int column, int row);
-struct VT_Size VT_getSize();
-void VT_fill(char c);
+struct VT_Size vt_get_pos();
+void vt_set_pos(int column, int row);
+struct VT_Size vt_get_size();
+void vt_fill(char c);

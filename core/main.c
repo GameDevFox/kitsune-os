@@ -20,10 +20,7 @@ extern size_t binary_entry;
 void print_address(size_t* addr, void (*out)(unsigned char)) {
   word_to_hex((uint32_t)addr, out);
 
-  out(':');
-  out(' ');
-  out('0');
-  out('x');
+  uart_puts(": 0x");
 
   uint32_t mem = *(uint32_t*)addr;
   word_to_hex(mem, out);
@@ -352,7 +349,9 @@ void command_handler(char input) {
     case 'b': do_halt(); break;
     case 'm': do_set_mode(); break;
 
+    // TODO: Convert to handler
     case 'W': write_memory(); break;
+    // TODO: Convert to handler
     case 'R': read_memory(); break;
 
     default:

@@ -26,9 +26,9 @@ void draw_rect(int top, int bottom, int left, int right) {
 }
 
 void fb_test() {
-  uart_puts("== FB TEST ==\r\n");
+  uart_puts("Drawing rectangle...");
   draw_rect(500, 800, 1000, 1500);
-  uart_puts("== FB TEST DONE ==\r\n");
+  uart_puts(" Done!\r\n");
 }
 
 void draw_curve(int inner, int outer) {
@@ -49,9 +49,9 @@ void draw_curve(int inner, int outer) {
 }
 
 void fb_test_2() {
-  uart_puts("== FB TEST 2 ==\r\n");
+  uart_puts("Drawing curve...");
   draw_curve(1000, 1080);
-  uart_puts("== FB TEST 2 DONE ==\r\n");
+  uart_puts(" Done!\r\n");
 }
 
 extern const uint32_t _binary_logo_data_start;
@@ -73,7 +73,7 @@ void draw_image(uint32_t* image_data, int width, int height, int x_pos, int y_po
 }
 
 void draw_logo() {
-  uart_puts("Drawing logo to frame buffer...");
+  uart_puts("Drawing logo...");
 
   // word_to_hex(&_binary_logo_data_start, uart_putc); uart_puts("\r\n");
   // word_to_hex(&_binary_logo_data_end, uart_putc); uart_puts("\r\n");
@@ -89,11 +89,11 @@ void draw_logo() {
 }
 
 void fb_clear() {
-  uart_puts("== FB CLEAR ==\r\n");
+  uart_puts("Clearing frame buffer...");
 
   for(int i = 0; i < (1080 * 1920); i++) {
     fb_write(i * 4, 0xff000000);
   }
 
-  uart_puts("== FB CLEAR DONE ==\r\n");
+  uart_puts(" Done!\r\n");
 }

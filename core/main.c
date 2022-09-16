@@ -80,9 +80,10 @@ void walk_memory(size_t* start, void (*out)(unsigned char)) {
 }
 
 void read_memory() {
-  size_t size = uart_getw();
+  size_t start = uart_getw();
+  size_t length = uart_getw();
 
-  for(size_t i = binary_entry; i < binary_entry + size; i++) {
+  for(size_t i = start; i < start + length; i++) {
     char value = *(char*)i;
     uart_putc(value);
   }
@@ -303,7 +304,7 @@ void run_counter() {
 void main_handler(char);
 void set_input_handler(void (*handler)(char));
 
-void (*input_handler)(char) = main_handler;
+void (*input_handler)(char) = command_handler;
 
 void raw_handler(char c) {
   byte_to_hex(c, uart_putc);
@@ -428,7 +429,7 @@ void process_input() {
 void input_loop() {
   while(run_loop) {
     // List "processes" here
-    run_counter();
+    // run_counter();
     process_input();
   }
 }
@@ -461,15 +462,15 @@ void print_params(uint32_t r0, uint32_t r1, uint32_t atags) {
 }
 
 #if defined(__cplusplus)
-extern "C" /* Use C linkage for kernel_main. */
+extern "C" /* Use C linkage for main. */
 #endif
 
 #ifdef AARCH64
 // arguments for AArch64
-void kernel_main(uint64_t dtb_ptr32, uint64_t x1, uint64_t x2, uint64_t x3)
+void main(uint64_t dtb_ptr32, uint64_t x1, uint64_t x2, uint64_t x3)
 #else
 // arguments for AArch32
-void kernel_main(uint32_t r0, uint32_t r1, uint32_t atags)
+void main(uint32_t r0, uint32_t r1, uint32_t atags)
 #endif
 {
   // Initialize UART for Raspberry Pi

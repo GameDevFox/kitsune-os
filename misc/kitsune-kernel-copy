@@ -1,0 +1,21 @@
+#!/bin/bash
+
+MOUNT_POINT=/root/kitsune-boot-mount
+IMAGE_PATH=${PATH_TO_KITSUNE_OS_REPO}/kitsune.img
+
+exec &>> /tmp/kitsune
+
+date
+
+umount -q "${MOUNT_POINT}"
+
+echo "Mounting ${DEVNAME}"
+mount "${DEVNAME}" "${MOUNT_POINT}"
+
+echo "Copying kernel to media..."
+cp "${IMAGE_PATH}" "${MOUNT_POINT}"
+
+echo "Un-mounting ${DEVNAME}"
+umount "${MOUNT_POINT}"
+echo "======================================="
+echo

@@ -12,9 +12,11 @@ LD = $(PREFIX)ld $(LDFLAGS)
 
 LINKER_FILE = linker.ld
 
-ELF_KERNEL = kitsune.elf
-QEMU_KERNEL = kitsune-qemu.elf
-BINARY_KERNEL = kitsune.img
+NAME=kitsune
+
+ELF_KERNEL = $(NAME).elf
+QEMU_KERNEL = $(NAME)-qemu.elf
+BINARY_KERNEL = $(NAME).img
 
 BOOT_DIR = arch/$(ARCH)
 BOOT_PATH = $(BOOT_DIR)/boot.o

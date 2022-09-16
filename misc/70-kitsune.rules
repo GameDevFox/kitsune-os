@@ -1,0 +1,1 @@
+ACTION=="add", ENV{ID_FS_UUID}=="UUID_OF_SD_CARD_FS_GOES_HERE", RUN+="/root/kitsune-kernel-copy"

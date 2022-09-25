@@ -18,16 +18,12 @@ export const MemoryTable = (props: MemoryTableProps) => {
   const [memory, setMemory] = useState<number[]>([]);
 
   useEffect(() => {
-    loadMemory();
-  }, [address]);
-
-  const loadMemory = () => {
     api.get(`/memory/${address}/length/0x80`)
       .then(res => {
         const { data } = res.data.data;
         setMemory(data);
       });
-  };
+  }, [address]);
 
   const rows = [];
   for(let i=0; i<8; i++) {

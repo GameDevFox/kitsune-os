@@ -41,7 +41,7 @@ qemu: $(QEMU_KERNEL)
 
 qemu-fifo: $(QEMU_KERNEL)
 	bin/init-fifo
-	make qemu < ./fifo/input > ./fifo/output
+	$(QEMU_ARM) $(QEMU_OPTS) -serial tcp:localhost:8081
 
 qemu-gdb: $(QEMU_KERNEL)
 	$(QEMU_ARM) -S -s $(QEMU_OPTS)

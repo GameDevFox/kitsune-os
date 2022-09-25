@@ -1,29 +1,18 @@
 #!/usr/bin/env ts-node
 
-import { open } from "fs/promises";
-import { exit } from "process";
+import { Server, Socket } from "net";
 
 import { outHandler } from "./output-handler";
 import { buildRestApp } from "./rest";
 
-if(process.argv.length !== 4) {
-    console.error("Usage: serial-client <input-path> <output-path>");
-    exit(1);
-}
+const server = new Server();
 
-const args = process.argv.slice(2);
-const [inPath, outPath] = args;
+server.on('connection', (socket: Socket) => {
+    const app = buildRestApp(socket);
+    const server = app.listen(8080);
 
-open(outPath, "r").then(async outFile => {
-    while(true) {
-        const data = await outFile.read();
-        outHandler(data);
-    }
+    socket.on('data', outHandler);
+    socket.on('close', () => server.close());
 });
 
-open(inPath, "w").then(inFile => {
-    const app = buildRestApp(inFile);
-    app.listen(8080);
-});
-
-
+server.listen(8081);

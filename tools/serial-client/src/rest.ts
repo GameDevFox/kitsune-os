@@ -1,7 +1,6 @@
-import { FileHandle, writeFile } from 'fs/promises';
-
 import cors from 'cors';
 import express from 'express';
+import { Socket } from 'net';
 
 import { defaultOutHandler, OutHandler, setOutHandler } from './output-handler';
 
@@ -15,18 +14,18 @@ const ReadCommand = (start: number, length: number) => {
 };
 
 // TODO: What do we do with the extra bytes???
-const ReadBytesHandler = (length: number, fn: (buffer: Buffer) => void) => {
+const ReadBytesHandler = (length: number, fn: (data: Buffer) => void) => {
   let index = 0;
-  const buffer = Buffer.alloc(length);
+  const result = Buffer.alloc(length);
 
   const handler: OutHandler = data => {
-    const { bytesRead } = data;
+    const byteCount = data.length;
 
-    data.buffer.copy(buffer, index, 0, bytesRead);
-    index += data.bytesRead
+    data.copy(result, index, 0, byteCount);
+    index += byteCount;
 
     if(index >= length)
-      fn(buffer);
+      fn(result);
   };
 
   return handler;
@@ -40,7 +39,7 @@ interface Request {
 
 const requests: Request[] = [];
 
-export const buildRestApp = (inFile: FileHandle) => {
+export const buildRestApp = (socket: Socket) => {
 
   const addRequest = (request: Request) => {
     requests.push(request);
@@ -51,11 +50,11 @@ export const buildRestApp = (inFile: FileHandle) => {
     handleRequests();
   };
 
-  const handleRequests = () => {
+  const handleRequests = async () => {
     const request = requests[0];
     const { start, length, fn } = request;
 
-    const handler = ReadBytesHandler(length, data => {
+    const handler = ReadBytesHandler(length, async data => {
       fn(data);
 
       // Remove to mark as done
@@ -63,7 +62,7 @@ export const buildRestApp = (inFile: FileHandle) => {
 
       if(requests.length) {
         // Do the next one
-        handleRequests();
+        await handleRequests();
       } else {
         // We're done... restore the default handler
         setOutHandler(defaultOutHandler);
@@ -72,7 +71,8 @@ export const buildRestApp = (inFile: FileHandle) => {
     setOutHandler(handler);
 
     const buf = ReadCommand(start, length);
-    inFile.write(buf);
+
+    await socket.write(buf);
 
     requests.shift();
   };
@@ -82,17 +82,17 @@ export const buildRestApp = (inFile: FileHandle) => {
   app.use(cors());
 
   app.get("/hello", (req, res) => {
-    inFile.write("1");
+    socket.write("1");
     res.send({ done: true });
   });
 
   app.get("/clear", (req, res) => {
-    inFile.write("0");
+    socket.write("0");
     res.send({ done: true });
   });
 
   app.get("/draw", (req, res) => {
-    inFile.write("789");
+    socket.write("789");
     res.send({ done: true });
   });
 

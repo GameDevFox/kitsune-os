@@ -18,7 +18,7 @@ export const MemoryTable = (props: MemoryTableProps) => {
   const [memory, setMemory] = useState<number[]>([]);
 
   useEffect(() => {
-    api.get(`/memory/${address}/length/0x80`)
+    api.get(`/memory/${address}/length/0x100`)
       .then(res => {
         const { data } = res.data.data;
         setMemory(data);
@@ -26,7 +26,7 @@ export const MemoryTable = (props: MemoryTableProps) => {
   }, [address]);
 
   const rows = [];
-  for(let i=0; i<8; i++) {
+  for(let i=0; i<16; i++) {
     const cells = [0, 4, 8, 12].map(value => (
       <Td
         key={`cell${value}`} padding='1'

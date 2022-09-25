@@ -1,6 +1,5 @@
 import cors from 'cors';
 import express from 'express';
-import { Socket } from 'net';
 
 import { defaultOutHandler, OutHandler, setOutHandler } from './output-handler';
 
@@ -39,7 +38,7 @@ interface Request {
 
 const requests: Request[] = [];
 
-export const buildRestApp = (socket: Socket) => {
+export const buildRestApp = (write: (data: Uint8Array) => void) => {
 
   const addRequest = (request: Request) => {
     requests.push(request);
@@ -71,8 +70,7 @@ export const buildRestApp = (socket: Socket) => {
     setOutHandler(handler);
 
     const buf = ReadCommand(start, length);
-
-    await socket.write(buf);
+    await write(buf);
 
     requests.shift();
   };
@@ -82,17 +80,17 @@ export const buildRestApp = (socket: Socket) => {
   app.use(cors());
 
   app.get("/hello", (req, res) => {
-    socket.write("1");
+    write(Buffer.from("1"));
     res.send({ done: true });
   });
 
   app.get("/clear", (req, res) => {
-    socket.write("0");
+    write(Buffer.from("0"));
     res.send({ done: true });
   });
 
   app.get("/draw", (req, res) => {
-    socket.write("789");
+    write(Buffer.from("789"));
     res.send({ done: true });
   });
 

@@ -1,9 +1,0 @@
-mkdir -p fifo
-
-if [ ! -p ./fifo/input ]; then
-  mkfifo ./fifo/input
-fi
-
-if [ ! -p ./fifo/output ]; then
-  mkfifo ./fifo/output
-fi

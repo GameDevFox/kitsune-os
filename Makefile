@@ -39,8 +39,7 @@ QEMU_OPTS = -M raspi2b -nographic -kernel $(QEMU_KERNEL)
 qemu: $(QEMU_KERNEL)
 	$(QEMU_ARM) $(QEMU_OPTS)
 
-qemu-fifo: $(QEMU_KERNEL)
-	bin/init-fifo
+qemu-tcp: $(QEMU_KERNEL)
 	$(QEMU_ARM) $(QEMU_OPTS) -serial tcp:localhost:8081
 
 qemu-gdb: $(QEMU_KERNEL)

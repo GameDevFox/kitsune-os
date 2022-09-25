@@ -4,7 +4,7 @@
   "author": "Edward Nicholes Jr.",
   "license": "MIT",
   "scripts": {
-    "start": "./src/index.ts ../../fifo/input ../../fifo/output"
+    "start": "./src/index.ts"
   },
   "dependencies": {
     "@types/cors": "^2.8.12",

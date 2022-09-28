@@ -89,8 +89,23 @@ export const buildRestApp = (write: (data: Uint8Array) => void) => {
     res.send({ done: true });
   });
 
-  app.get("/draw", (req, res) => {
-    write(Buffer.from("789"));
+  app.get("/draw/:name", (req, res) => {
+    const { name } = req.params;
+
+    switch(name) {
+      case 'curve':
+        write(Buffer.from("7"));
+        break;
+      case 'mascot':
+        write(Buffer.from("8"));
+        break;
+      case 'logo':
+        write(Buffer.from("9"));
+        break;
+      default:
+        console.error(`No such object to draw: ${name}`);
+    }
+
     res.send({ done: true });
   });
 

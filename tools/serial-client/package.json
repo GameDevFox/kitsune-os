@@ -4,7 +4,9 @@
   "author": "Edward Nicholes Jr.",
   "license": "MIT",
   "scripts": {
-    "start": "./src/index.ts"
+    "start": "./src/index.ts",
+    "tcp-mode": "./src/index.ts",
+    "serial-mode": "./src/index.ts /dev/ttyACM0"
   },
   "dependencies": {
     "@types/cors": "^2.8.12",

@@ -23,7 +23,7 @@ function App() {
 
   const sayHello = () => api.get('/hello');
   const clear = () => api.get('/clear');
-  const draw = () => api.get('/draw');
+  const draw = (value: string) => api.get(`/draw/${value}`);
 
   const updateAddress = () => setAddress(Number(addressInput));
 
@@ -36,7 +36,9 @@ function App() {
           </Button>
           <Button onClick={sayHello}>Hello!</Button>
           <Button onClick={clear}>Clear</Button>
-          <Button onClick={draw}>Draw</Button>
+          <Button onClick={() => draw('curve')}>Draw Curve</Button>
+          <Button onClick={() => draw('mascot')}>Draw Mascot</Button>
+          <Button onClick={() => draw('logo')}>Draw Logo</Button>
         </ButtonGroup>
 
         <Stack direction='row'>

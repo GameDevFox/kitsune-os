@@ -1,0 +1,9 @@
+#!/bin/bash
+
+rm -rf ./tools/serial-client/node_modules
+rm -rf ./tools/serial-client-web/node_modules
+
+make clean
+make
+
+tar --create --gzip --file kitsune-os.tar.gz *

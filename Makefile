@@ -1,13 +1,10 @@
 include vars.mk
 
-### TARGETS ###
-all: $(ELF_KERNEL) $(QEMU_KERNEL) $(BINARY_KERNEL)
-
 BOOT_OBJS = $(subst .S,.o,$(wildcard ./arch/$(ARCH)/*.S))
 CORE_OBJS = $(subst .c,.o,$(wildcard ./core/*.c))
-test: $(BOOT_OBJS) $(CORE_OBJS) image/logo.o config/raspberry-pi-4b.o
-	echo $(OBJCOPY)
-	# $(CC) $(CFLAGS) -T $(LINKER_FILE) -o ./kernel.o $^
+
+### TARGETS ###
+all: $(ELF_KERNEL) $(QEMU_KERNEL) $(BINARY_KERNEL)
 
 clean:
 	find . -type f -name '*.o' -delete
@@ -22,28 +19,28 @@ $(QEMU_KERNEL): $(LINKER_FILE) $(BOOT_OBJS) $(CORE_OBJS) image/logo.o config/qem
 $(BINARY_KERNEL): $(ELF_KERNEL)
 	$(PREFIX)objcopy $(ELF_KERNEL) -O binary $(BINARY_KERNEL)
 
-# kernel.o: $(BOOT_OBJS) $(CORE_OBJS) image/logo.o config/raspberry-pi-4b.o
-# 	$(CC) $(CFLAGS) -c -o core/kernel.o core/kernel.c
-
-# kernel-qemu.o: kernel.o: $(BOOT_OBJS) $(CORE_OBJS) image/logo.o config/qemu-raspberry-pi-2b.o
-# 	$(CC) $(CFLAGS) -c -o core/kernel-qemu.o core/kernel.c
-
 # Images
 image/%.o:
 	make -C image $*.o
 
 ## QEMU
 QEMU_ARM = qemu-system-arm
-QEMU_OPTS = -M raspi2b -nographic -kernel $(QEMU_KERNEL)
+QEMU_OPTS = \
+	-M raspi2b \
+	-global bcm2835-fb.xres=1920 \
+	-global bcm2835-fb.yres=1080 \
+	-global bcm2835-fb.bpp=32 \
+	-global bcm2835-fb.pixo=0 \
+	-kernel $(QEMU_KERNEL)
 
 qemu: $(QEMU_KERNEL)
-	$(QEMU_ARM) $(QEMU_OPTS)
+	$(QEMU_ARM) $(QEMU_OPTS) -serial $(shell tty)
+
+qemu-gdb: $(QEMU_KERNEL)
+	$(QEMU_ARM) -S -s $(QEMU_OPTS) -serial $(shell tty)
 
 qemu-tcp: $(QEMU_KERNEL)
 	$(QEMU_ARM) $(QEMU_OPTS) -serial tcp:localhost:8081
-
-qemu-gdb: $(QEMU_KERNEL)
-	$(QEMU_ARM) -S -s $(QEMU_OPTS)
 
 ## Utils
 gdb:

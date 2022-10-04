@@ -5,9 +5,10 @@
 #include "uart.h"
 
 extern size_t binary_entry;
+extern uint32_t fb_base;
 
 static void fb_write(uint32_t reg, uint32_t data) {
-  *(volatile uint32_t*)(FB_BASE + reg) = data;
+  *(volatile uint32_t*)(fb_base + reg) = data;
 }
 
 int get_pixel(int x, int y) {
@@ -54,10 +55,6 @@ void fb_test_2() {
   uart_puts(" Done!\r\n");
 }
 
-extern const uint32_t _binary_logo_data_start;
-extern const uint32_t _binary_logo_data_end;
-extern const uint32_t _binary_logo_data_size;
-
 void draw_image(uint32_t* image_data, int width, int height, int x_pos, int y_pos) {
 
   for(int y = 0; y < height; y++) {
@@ -72,17 +69,21 @@ void draw_image(uint32_t* image_data, int width, int height, int x_pos, int y_po
   }
 }
 
+extern const uint32_t _binary_logo_data_start;
+extern const uint32_t _binary_logo_data_end;
+extern const uint32_t _binary_logo_data_size;
+
+#define LOGO_WIDTH  168
+#define LOGO_HEIGHT 256
+
 void draw_logo() {
   uart_puts("Drawing logo...");
 
-  // word_to_hex(&_binary_logo_data_start, uart_putc); uart_puts("\r\n");
-  // word_to_hex(&_binary_logo_data_end, uart_putc); uart_puts("\r\n");
-  // word_to_hex(&_binary_logo_data_size, uart_putc); uart_puts("\r\n");
-
   draw_image(
     (uint32_t*)&_binary_logo_data_start,
-    168, 256, // width, height
-    876, 412 // x, y
+    LOGO_WIDTH, LOGO_HEIGHT, // width, height
+    (FB_WIDTH / 2) - (LOGO_WIDTH / 2), // x pos
+    (FB_HEIGHT / 2) - (LOGO_HEIGHT / 2) // y pos
   );
 
   uart_puts(" Done!\r\n");
@@ -91,7 +92,7 @@ void draw_logo() {
 void fb_clear() {
   uart_puts("Clearing frame buffer...");
 
-  for(int i = 0; i < (1080 * 1920); i++) {
+  for(int i = 0; i < (FB_WIDTH * FB_HEIGHT); i++) {
     fb_write(i * 4, 0xff000000);
   }
 

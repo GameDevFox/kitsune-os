@@ -6,26 +6,16 @@
 
 extern int raspi;
 
-static uint32_t MMIO_BASE;
-
-// The MMIO area base address, depends on board type
-static void mmio_init() {
-  switch(raspi) {
-    case 2:
-    case 3:  MMIO_BASE = 0x3f000000; break; // for raspi2 & 3
-    case 4:  MMIO_BASE = 0xfe000000; break; // for raspi4
-    default: MMIO_BASE = 0x20000000; break; // for raspi1, raspi zero etc.
-  }
-}
+extern uint32_t mmio_base;
 
 // Memory-Mapped I/O output
 static void mmio_write(uint32_t reg, uint32_t data) {
-  write(MMIO_BASE + reg, data);
+  write(mmio_base + reg, data);
 }
 
 // Memory-Mapped I/O input
 static uint32_t mmio_read(uint32_t reg) {
-  return read(MMIO_BASE + reg);
+  return read(mmio_base + reg);
 }
 
 #define ONE "#1"
@@ -44,8 +34,6 @@ volatile unsigned int  __attribute__((aligned(16))) mbox[9] = {
 };
 
 void uart_init() {
-  mmio_init();
-
   // Disable UART0.
   mmio_write(UART0_CR, 0x00000000);
   // Setup the GPIO pin 14 && 15.
@@ -120,5 +108,5 @@ void uart_getc_pipe(void out()) {
 
 void uart_puts(const char* str) {
   for(uint32_t i = 0; str[i] != '\0'; i++)
-    uart_putc((unsigned char)str[i]);
+    uart_putc((unsigned char) str[i]);
 }

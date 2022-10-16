@@ -1,13 +1,13 @@
 import _ from 'lodash';
 import { useEffect, useState } from 'react';
 
-import { BsBookmark } from 'react-icons/bs';
+import { BsBookmark, BsXLg } from 'react-icons/bs';
 import { ImArrowDown, ImArrowUp } from 'react-icons/im';
 
 import {
   Box,
-  Button, ButtonGroup, Center, Heading, Icon, IconButton, Input, InputGroup,
-  InputLeftAddon, Stack, useColorMode,
+  Button, ButtonGroup, Center, Heading, Icon, IconButton, Input,
+  InputGroup, InputLeftAddon, InputRightElement, Stack, useColorMode,
 } from '@chakra-ui/react';
 
 import { api } from './api';
@@ -25,6 +25,12 @@ function App() {
   const [addressInput, setAddressInput] = useState<string>(
     address.toString(16)
   );
+
+  const [offset, setOffset] = useState<number>(0);
+  const [offsetInput, setOffsetInput] = useState<string>(
+    offset.toString(16)
+  );
+
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(
     loadBookmarks() ||
     [
@@ -37,11 +43,16 @@ function App() {
     setAddressInput(address.toString(16));
   }, [address]);
 
+  useEffect(() => {
+    setOffsetInput(offset.toString(16));
+  }, [offset]);
+
   const sayHello = () => api.get('/hello');
   const clear = () => api.get('/clear');
   const draw = (value: string) => api.get(`/draw/${value}`);
 
   const updateAddress = () => setAddress(Number(`0x${addressInput}`));
+  const updateOffset = () => setOffset(Number(`0x${offsetInput}`));
 
   const updateBookmarks = (newBookmarks: Bookmark[]) => {
     setBookmarks(newBookmarks);
@@ -91,6 +102,25 @@ function App() {
             />
           </InputGroup>
 
+          <InputGroup>
+            <InputLeftAddon paddingInlineEnd='1'>Offset: 0x</InputLeftAddon>
+            <Input
+              paddingInlineStart='1'
+              type='input' value={offsetInput}
+              onChange={e => setOffsetInput(e.currentTarget.value)}
+              onKeyDown={e => {
+                if(e.code === 'Enter')
+                  updateOffset();
+              }}
+            />
+            <InputRightElement>
+              <IconButton
+                aria-label='clear' size='sm' icon={<Icon as={BsXLg}/>}
+                onClick={() => setOffset(0)}
+              />
+            </InputRightElement>
+          </InputGroup>
+
           <Button onClick={updateAddress}>Go</Button>
         </Stack>
 
@@ -105,7 +135,7 @@ function App() {
             </Box>
           )}
 
-          <MemoryTable address={address}/>
+          <MemoryTable address={address + offset}/>
 
           <Stack>
             <IconButton

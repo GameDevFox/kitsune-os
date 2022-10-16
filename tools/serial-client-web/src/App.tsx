@@ -1,13 +1,22 @@
 import _ from 'lodash';
 import { useEffect, useState } from 'react';
 
+import { BsBookmark } from 'react-icons/bs';
+import { ImArrowDown, ImArrowUp } from 'react-icons/im';
+
 import {
-  Button, ButtonGroup, Center, Flex, Input, InputGroup,
+  Box,
+  Button, ButtonGroup, Center, Heading, Icon, IconButton, Input, InputGroup,
   InputLeftAddon, Stack, useColorMode,
 } from '@chakra-ui/react';
 
 import { api } from './api';
+import { Bookmark, Bookmarks } from './Bookmarks';
 import { MemoryTable } from './memory-table';
+
+const BOOKMARKS = 'bookmarks';
+
+const loadBookmarks = () => JSON.parse(localStorage.getItem(BOOKMARKS) || 'null');
 
 function App() {
   const { colorMode, toggleColorMode } = useColorMode();
@@ -15,6 +24,13 @@ function App() {
   const [address, setAddress] = useState<number>(0x8000);
   const [addressInput, setAddressInput] = useState<string>(
     address.toString(16)
+  );
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>(
+    loadBookmarks() ||
+    [
+      { address: 0x8000 },
+      { address: 0xa000 },
+    ]
   );
 
   useEffect(() => {
@@ -26,6 +42,21 @@ function App() {
   const draw = (value: string) => api.get(`/draw/${value}`);
 
   const updateAddress = () => setAddress(Number(`0x${addressInput}`));
+
+  const updateBookmarks = (newBookmarks: Bookmark[]) => {
+    setBookmarks(newBookmarks);
+    localStorage.setItem(BOOKMARKS, JSON.stringify(newBookmarks));
+  };
+
+  const createBookmark = () => updateBookmarks([...bookmarks, { address }]);
+
+  const removeBookmarkAt = (index: number) => {
+    const newBookmarks = [
+      ...bookmarks.slice(0, index),
+      ...bookmarks.slice(index + 1, bookmarks.length)
+    ];
+    updateBookmarks(newBookmarks);
+  };
 
   return (
     <Center>
@@ -42,11 +73,16 @@ function App() {
         </ButtonGroup>
 
         <Stack direction='row'>
+          <IconButton
+            aria-label='Bookmark' icon={<Icon as={BsBookmark}/>}
+            onClick={createBookmark}
+          />
+
           <InputGroup>
             <InputLeftAddon paddingInlineEnd='1'>Address: 0x</InputLeftAddon>
             <Input
               paddingInlineStart='1'
-              type="input" width="auto" value={addressInput}
+              type='input' value={addressInput}
               onChange={e => setAddressInput(e.currentTarget.value)}
               onKeyDown={e => {
                 if(e.code === 'Enter')
@@ -54,15 +90,34 @@ function App() {
               }}
             />
           </InputGroup>
-          <Button onClick={updateAddress}>Memory</Button>
+
+          <Button onClick={updateAddress}>Go</Button>
         </Stack>
 
-        <MemoryTable address={address}/>
+        <Stack direction='row'>
+          {bookmarks.length && (
+            <Box>
+              <Heading size='sm'>Bookmarks</Heading>
+              <Bookmarks value={bookmarks}
+                onClick={address => setAddress(address)}
+                onDelete={index => removeBookmarkAt(index)}
+              />
+            </Box>
+          )}
 
-        <Flex direction='row' gap='2'>
-          <Button flexGrow='1' onClick={() => setAddress(address - 0x40)}>Prev</Button>
-          <Button flexGrow='1' onClick={() => setAddress(address + 0x40)}>Next</Button>
-        </Flex>
+          <MemoryTable address={address}/>
+
+          <Stack>
+            <IconButton
+              flexGrow='1' aria-label='prev' icon={<Icon as={ImArrowUp}/>}
+              onClick={() => setAddress(address - 0x40)}
+            />
+            <IconButton
+              flexGrow='1' aria-label='next' icon={<Icon as={ImArrowDown}/>}
+              onClick={() => setAddress(address + 0x40)}
+            />
+          </Stack>
+        </Stack>
       </Stack>
     </Center>
   );

@@ -58,8 +58,6 @@ If you have `qemu-system-arm` installed you can run:
 
 - Run `yarn serial-mode` to start the serial client
 
-- Run `picocom --quiet --baud 115200 --noreset --nolock /dev/${YOUR_SERIAL_DEVICE}` to set the baudrate of the serial device to `115200`
-
 - Power on the Raspberry Pi 4
 
 ## Running the Serial Client Web UI

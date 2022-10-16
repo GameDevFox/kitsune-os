@@ -1,5 +1,6 @@
 #!/usr/bin/env ts-node
 
+import { spawn } from "child_process";
 import { open } from "fs/promises";
 import { exit } from "process";
 import { Server, Socket } from "net";
@@ -16,25 +17,37 @@ const tcpMode = () => {
 
         socket.on('data', outHandler);
         socket.on('close', () => server.close());
+
+        console.log('READY!');
     });
 
     server.listen(8081);
 };
 
-const charDeviceMode = (charDev: string) => {
-    open(charDev, "r").then(async outFile => {
-        while(true) {
-            const { buffer, bytesRead } = await outFile.read();
+const charDeviceMode = async (charDev: string) => {
+    // Set baud rate to 115200
+    const process = spawn(`stty`, ['--file', charDev, '115200']);
 
-            const data = Buffer.alloc(bytesRead);
-            buffer.copy(data, 0, 0, bytesRead);
-            outHandler(data);
-        }
-    });
+    process.on('close', code => {
+        if(code)
+            console.warn('Warning: Failed to set baud rate on serial device');
 
-    open(charDev, "w").then(inFile => {
-        const app = buildRestApp(data => inFile.write(data));
-        app.listen(8080);
+        open(charDev, "r").then(async outFile => {
+            while(true) {
+                const { buffer, bytesRead } = await outFile.read();
+
+                const data = Buffer.alloc(bytesRead);
+                buffer.copy(data, 0, 0, bytesRead);
+                outHandler(data);
+            }
+        });
+
+        open(charDev, "w").then(inFile => {
+            const app = buildRestApp(data => inFile.write(data));
+            app.listen(8080);
+
+            console.log('READY!');
+        });
     });
 };
 

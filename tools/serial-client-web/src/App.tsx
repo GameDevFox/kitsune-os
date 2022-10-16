@@ -14,18 +14,18 @@ function App() {
 
   const [address, setAddress] = useState<number>(0x8000);
   const [addressInput, setAddressInput] = useState<string>(
-    `0x${address.toString(16)}`
+    address.toString(16)
   );
 
   useEffect(() => {
-    setAddressInput(`0x${address.toString(16)}`);
+    setAddressInput(address.toString(16));
   }, [address]);
 
   const sayHello = () => api.get('/hello');
   const clear = () => api.get('/clear');
   const draw = (value: string) => api.get(`/draw/${value}`);
 
-  const updateAddress = () => setAddress(Number(addressInput));
+  const updateAddress = () => setAddress(Number(`0x${addressInput}`));
 
   return (
     <Center>
@@ -43,10 +43,15 @@ function App() {
 
         <Stack direction='row'>
           <InputGroup>
-            <InputLeftAddon>Address:</InputLeftAddon>
+            <InputLeftAddon paddingInlineEnd='1'>Address: 0x</InputLeftAddon>
             <Input
+              paddingInlineStart='1'
               type="input" width="auto" value={addressInput}
               onChange={e => setAddressInput(e.currentTarget.value)}
+              onKeyDown={e => {
+                if(e.code === 'Enter')
+                  updateAddress();
+              }}
             />
           </InputGroup>
           <Button onClick={updateAddress}>Memory</Button>

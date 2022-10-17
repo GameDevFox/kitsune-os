@@ -1,8 +1,19 @@
+### Regex parsing patterns ###
+
+^MRC p(\d+), (\d+), <Rt>, c(\d+), c(\d+), (\d+).+Read.* ([A-Z0-9\[\]:_]+) .*Rt
+["$6", "read", $1, $2, $3, $4, $5],
+
+^MCR p(\d+), (\d+), <Rt>, c(\d+), c(\d+), (\d+).+Write.* ([A-Z0-9\[\]:_]+)\s*$
+["$6", "write", $1, $2, $3, $4, $5],
+
+### 32-bit instructions ###
+
 MRC p15, 0, <Rt>, c1, c0, 1 ; Read ACTLR into Rt
 MCR p15, 0, <Rt>, c1, c0, 1 ; Write Rt to ACTLR
 
 MRC p15, 0, <Rt>, c5, c1, 0 ; Read ADFSR into Rt
 MCR p15, 0, <Rt>, c5, c1, 0 ; Write Rt to ADFSR
+
 MRC p15, 0, <Rt>, c5, c1, 1 ; Read AIFSR into Rt
 MCR p15, 0, <Rt>, c5, c1, 1 ; Write Rt to AIFSR
 
@@ -24,9 +35,6 @@ MCR p15, 4, <Rt>, c14, c1, 0 ; Write Rt to CNTHCTL
 MRC p15, 4, <Rt>, c14, c2, 1 ; Read CNTHP_CTL into Rt
 MCR p15, 4, <Rt>, c14, c2, 1 ; Write Rt to CNTHP_CTL
 
-MRRC p15, 6, <Rt>, <Rt2>, c14 ; Read 64-bit CNTHP_CVAL into Rt (low word) and Rt2 (high word)
-MCRR p15, 6, <Rt>, <Rt2>, c14 ; Write Rt (low word) and Rt2 (high word) to 64-bit CNTHP_CVAL
-
 MRC p15, 4, <Rt>, c14, c2, 0 ; Read CNTHP_TVAL into Rt
 MCR p15, 4, <Rt>, c14, c2, 0 ; Write Rt to CNTHP_TVAL
 
@@ -36,27 +44,14 @@ MCR p15, 0, <Rt>, c14, c1, 0 ; Write Rt to CNTKCT
 MRC p15, 0, <Rt>, c14, c2, 1 ; Read CNTP_CTL into Rt
 MCR p15, 0, <Rt>, c14, c2, 1 ; Write Rt to CNTP_CTL
 
-MRRC p15, 2, <Rt>, <Rt2>, c14 ; Read 64-bit CNTP_CVAL into Rt (low word) and Rt2 (high word)
-MCRR p15, 2, <Rt>, <Rt2>, c14 ; Write Rt (low word) and Rt2 (high word) to 64-bit CNTP_CVAL
-
 MRC p15, 0, <Rt>, c14, c2, 0 ; Read CNTP_TVAL into Rt
 MCR p15, 0, <Rt>, c14, c2, 0 ; Write Rt to CNTP_TVAL
-
-MRRC p15, 0, <Rt>, <Rt2>, c14 ; Read 64-bit CNTPCT into Rt (low word) and Rt2 (high word)
 
 MRC p15, 0, <Rt>, c14, c3, 1 ; Read CNTV_CTL into Rt
 MCR p15, 0, <Rt>, c14, c3, 1 ; Write Rt to CNTV_CTL
 
-MRRC p15, 3, <Rt>, <Rt2>, c14 ; Read 64-bit CNTV_CVAL into Rt (low word) and Rt2 (high word)
-MCRR p15, 3, <Rt>, <Rt2>, c14 ; Write 64-bit Rt (low word) and Rt2 (high word) to CNTV_CVAL
-
 MRC p15, 0, <Rt>, c14, c3, 0 ; Read CNTV_TVAL into Rt
 MCR p15, 0, <Rt>, c14, c3, 0 ; Write Rt to CNTV_TVAL
-
-MRRC p15, 1, <Rt>, <Rt2>, c14 ; Read 64-bit CNTVCT into Rt (low word) and Rt2 (high word)
-
-MRRC p15, 4, <Rt>, <Rt2>, c14 ; Read 64-bit CNTVOFF into Rt (low word) and Rt2 (high word)
-MCRR p15, 4, <Rt>, <Rt2>, c14 ; Write Rt (low word) and Rt2 (high word) to 64-bit CNTVOFF
 
 MRC p15, 0, <Rt>, c13, c0, 1 ; Read CONTEXTIDR into Rt
 MCR p15, 0, <Rt>, c13, c0, 1 ; Write Rt to CONTEXTIDR
@@ -89,6 +84,7 @@ MCR p15, 4, <Rt>, c1, c0, 1 ; Write Rt to HACTLR
 
 MRC p15, 4, <Rt>, c5, c1, 0 ; Read HADFSR into Rt
 MCR p15, 4, <Rt>, c5, c1, 0 ; Write Rt to HADFSR
+
 MRC p15, 4, <Rt>, c5, c1, 1 ; Read HAIFSR into Rt
 MCR p15, 4, <Rt>, c5, c1, 1 ; Write Rt to HAIFSR
 
@@ -130,9 +126,6 @@ MCR p15, 4, <Rt>, c2, c0, 2 ; Write Rt to HTCR
 
 MRC p15, 4, <Rt>, c13, c0, 2 ; Read HTPIDR into Rt
 MCR p15, 4, <Rt>, c13, c0, 2 ; Write Rt to HTPIDR
-
-MRRC p15, 4, <Rt>, <Rt2>, c2 ; Read 64-bit HTTBR into Rt (low word) and Rt2 (high word)
-MCRR p15, 4, <Rt>, <Rt2>, c2 ; Write Rt (low word) and Rt2 (high word) to 64-bit HTTBR
 
 MRC p15, 4, <Rt>, c12, c0, 0 ; Read HVBAR into Rt
 MCR p15, 4, <Rt>, c12, c0, 0 ; Write Rt to HVBAR
@@ -283,3 +276,24 @@ MCR p15, 4, <Rt>, c0, c0, 0 ; Write Rt to VPIDR
 
 MRC p15, 4, <Rt>, c2, c1, 2 ; Read VTCR into Rt
 MCR p15, 4, <Rt>, c2, c1, 2 ; Write Rt to VTCR
+
+### 64-bit instructions ###
+
+MRRC p15, 6, <Rt>, <Rt2>, c14 ; Read 64-bit CNTHP_CVAL into Rt (low word) and Rt2 (high word)
+MCRR p15, 6, <Rt>, <Rt2>, c14 ; Write Rt (low word) and Rt2 (high word) to 64-bit CNTHP_CVAL
+
+MRRC p15, 2, <Rt>, <Rt2>, c14 ; Read 64-bit CNTP_CVAL into Rt (low word) and Rt2 (high word)
+MCRR p15, 2, <Rt>, <Rt2>, c14 ; Write Rt (low word) and Rt2 (high word) to 64-bit CNTP_CVAL
+
+MRRC p15, 0, <Rt>, <Rt2>, c14 ; Read 64-bit CNTPCT into Rt (low word) and Rt2 (high word)
+
+MRRC p15, 3, <Rt>, <Rt2>, c14 ; Read 64-bit CNTV_CVAL into Rt (low word) and Rt2 (high word)
+MCRR p15, 3, <Rt>, <Rt2>, c14 ; Write 64-bit Rt (low word) and Rt2 (high word) to CNTV_CVAL
+
+MRRC p15, 1, <Rt>, <Rt2>, c14 ; Read 64-bit CNTVCT into Rt (low word) and Rt2 (high word)
+
+MRRC p15, 4, <Rt>, <Rt2>, c14 ; Read 64-bit CNTVOFF into Rt (low word) and Rt2 (high word)
+MCRR p15, 4, <Rt>, <Rt2>, c14 ; Write Rt (low word) and Rt2 (high word) to 64-bit CNTVOFF
+
+MRRC p15, 4, <Rt>, <Rt2>, c2 ; Read 64-bit HTTBR into Rt (low word) and Rt2 (high word)
+MCRR p15, 4, <Rt>, <Rt2>, c2 ; Write Rt (low word) and Rt2 (high word) to 64-bit HTTBR

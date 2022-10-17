@@ -1,7 +1,11 @@
 import cors from 'cors';
 import express from 'express';
 
+import { coprocRegisterCodes as coprocRegs } from '../data/coproc-registers';
+
 import { defaultOutHandler, OutHandler, setOutHandler } from './output-handler';
+
+const coprocRegisterCodes: Record<string, number[]> = coprocRegs;
 
 const ReadCommand = (start: number, length: number) => {
   const buf = Buffer.alloc(9);
@@ -31,9 +35,9 @@ const ReadBytesHandler = (length: number, fn: (data: Buffer) => void) => {
 };
 
 interface Request {
-  start: number,
-  length: number,
-  fn: (buffer: Buffer) => void,
+  command: Buffer;
+  bytesToRead: number;
+  fn: (buffer: Buffer) => void;
 }
 
 const requests: Request[] = [];
@@ -51,26 +55,27 @@ export const buildRestApp = (write: (data: Uint8Array) => void) => {
 
   const handleRequests = async () => {
     const request = requests[0];
-    const { start, length, fn } = request;
+    const { command, bytesToRead, fn } = request;
 
-    const handler = ReadBytesHandler(length, async data => {
-      fn(data);
+    if(bytesToRead) {
+      const handler = ReadBytesHandler(bytesToRead, async data => {
+        fn(data);
 
-      // Remove to mark as done
-      requests.shift();
+        // Remove to mark as done
+        requests.shift();
 
-      if(requests.length) {
-        // Do the next one
-        await handleRequests();
-      } else {
-        // We're done... restore the default handler
-        setOutHandler(defaultOutHandler);
-      }
-    });
-    setOutHandler(handler);
-
-    const buf = ReadCommand(start, length);
-    await write(buf);
+        if(requests.length) {
+          // Do the next one
+          await handleRequests();
+        } else {
+          // We're done... restore the default handler
+          setOutHandler(defaultOutHandler);
+        }
+      });
+      setOutHandler(handler);
+    }
+;
+    await write(command);
 
     requests.shift();
   };
@@ -114,9 +119,41 @@ export const buildRestApp = (write: (data: Uint8Array) => void) => {
     const length = Number(req.params.length);
 
     addRequest({
-      start, length,
+      command: ReadCommand(start, length),
+      bytesToRead: length,
       fn: data => {
         res.send({ done: true, data });
+      }
+    });
+  });
+
+  app.get("/coproc-registers", (req, res) => {
+    res.send({ done: true, names: Object.keys(coprocRegisterCodes) });
+  });
+
+  app.get("/coproc-registers/:name", (req, res) => {
+    const name = req.params.name;
+
+    if(!(name in coprocRegisterCodes)) {
+      res.sendStatus(404);
+      return;
+    }
+
+    const code = coprocRegisterCodes[name];
+
+    const codeStr = code.map(number => number.toString(16)).join('');
+    const command =  Buffer.from('`' + codeStr);
+
+    addRequest({
+      command,
+      bytesToRead: 8,
+      fn: data => {
+        let dataStr: any = data.toString();
+
+        const buffer = Buffer.alloc(4);
+        buffer.writeUint32LE(parseInt(`0x${dataStr}`));
+
+        res.send({ done: true, data: buffer });
       }
     });
   });

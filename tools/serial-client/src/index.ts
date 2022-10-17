@@ -8,17 +8,19 @@ import { Server, Socket } from "net";
 import { outHandler } from "./output-handler";
 import { buildRestApp } from "./rest";
 
+const restPort = 8080;
+
 const tcpMode = () => {
     const server = new Server();
 
     server.on('connection', (socket: Socket) => {
         const app = buildRestApp(data => socket.write(data));
-        const server = app.listen(8080);
+        const server = app.listen(restPort);
 
         socket.on('data', outHandler);
         socket.on('close', () => server.close());
 
-        console.log('READY!');
+        console.log(`Listening on ${restPort} ...`);
     });
 
     server.listen(8081);
@@ -44,9 +46,9 @@ const charDeviceMode = async (charDev: string) => {
 
         open(charDev, "w").then(inFile => {
             const app = buildRestApp(data => inFile.write(data));
-            app.listen(8080);
+            app.listen(restPort);
 
-            console.log('READY!');
+            console.log(`Listening on ${restPort} ...`);
         });
     });
 };

@@ -23,7 +23,7 @@ export const Bookmarks = (props: BookmarksProps) => {
   return (
     <Stack>
       {value.map(({ name, address }, index) => (
-        <Stack direction='row'>
+        <Stack key={index} direction='row'>
           <Box key={name} flexGrow='1'
             backgroundColor='blue.500' borderRadius='md' cursor='pointer' padding='1'
             onClick={() => onClick(address)}

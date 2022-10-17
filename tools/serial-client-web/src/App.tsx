@@ -10,9 +10,10 @@ import {
   InputGroup, InputLeftAddon, InputRightElement, Stack, useColorMode,
 } from '@chakra-ui/react';
 
-import { api } from './api';
+import { clear, draw, sayHello } from './api';
 import { Bookmark, Bookmarks } from './Bookmarks';
 import { MemoryTable } from './memory-table';
+import { CoprocRegisters } from './CoprocRegisters';
 
 const BOOKMARKS = 'bookmarks';
 
@@ -47,10 +48,6 @@ function App() {
     setOffsetInput(offset.toString(16));
   }, [offset]);
 
-  const sayHello = () => api.get('/hello');
-  const clear = () => api.get('/clear');
-  const draw = (value: string) => api.get(`/draw/${value}`);
-
   const updateAddress = () => setAddress(Number(`0x${addressInput}`));
   const updateOffset = () => setOffset(Number(`0x${offsetInput}`));
 
@@ -82,6 +79,8 @@ function App() {
           <Button onClick={() => draw('mascot')}>Draw Mascot</Button>
           <Button onClick={() => draw('logo')}>Draw Logo</Button>
         </ButtonGroup>
+
+        <CoprocRegisters/>
 
         <Stack direction='row'>
           <IconButton

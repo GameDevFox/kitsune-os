@@ -126,24 +126,25 @@ void print_timer() {
 }
 
 void generate_mrc(bool is_mrc) {
-  uart_puts("coproc" EOL);
+  // uart_puts("coproc" EOL);
   char coproc = getb();
-  uart_puts("opc1" EOL);
+  // uart_puts("opc1" EOL);
   char opc1 = getb();
   // uart_puts("Rt" EOL);
   // char Rt = getb();
-  uart_puts("CRn" EOL);
+  // uart_puts("CRn" EOL);
   char cr_n = getb();
-  uart_puts("CRm" EOL);
+  // uart_puts("CRm" EOL);
   char cr_m = getb();
-  uart_puts("opc2" EOL);
+  // uart_puts("opc2" EOL);
   char opc2 = getb();
 
   char rt = 0;
   uint32_t flags = is_mrc ? ASM_MRC_FLAG : 0;
   binary_entry = asm_mrc_mcr(coproc, opc1, rt, cr_n, cr_m, opc2, flags);
-  word_to_hex(binary_entry, uart_putc);
-  uart_puts(EOL);
+  // word_to_hex(binary_entry, uart_putc);
+  call_instruction();
+  // uart_puts(EOL);
 }
 
 void write_word() {
@@ -201,7 +202,7 @@ void call_instruction() {
   // Call function and print result
   size_t result = live_fn();
   word_to_hex(result, uart_putc);
-  uart_puts(EOL);
+  // uart_puts(EOL);
 }
 
 void do_halt() {

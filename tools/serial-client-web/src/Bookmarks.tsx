@@ -9,6 +9,7 @@ export  interface Bookmark {
 
 interface BookmarksProps {
   value: Bookmark[];
+  selected?: number;
   onClick?: (address: number) => void;
   onDelete?: (index: number) => void;
 }
@@ -16,6 +17,7 @@ interface BookmarksProps {
 export const Bookmarks = (props: BookmarksProps) => {
   const {
     value,
+    selected,
     onClick = () => {},
     onDelete = (index: number) => {},
   } = props;
@@ -24,8 +26,10 @@ export const Bookmarks = (props: BookmarksProps) => {
     <Stack>
       {value.map(({ name, address }, index) => (
         <Stack key={index} direction='row'>
-          <Box key={name} flexGrow='1'
-            backgroundColor='blue.500' borderRadius='md' cursor='pointer' padding='1'
+          <Box key={name}
+            backgroundColor={address === selected ? 'blue.300' : 'blue.600'}
+            borderRadius='md' cursor='pointer' flexGrow='1'
+            padding='1' paddingLeft='3' paddingRight='3'
             onClick={() => onClick(address)}
           >
             {name && <input style={{ paddingLeft: '4px', borderRadius: '4px' }} value={name}/>}

@@ -12,7 +12,7 @@ LD = $(PREFIX)ld $(LDFLAGS)
 
 LINKER_FILE = linker.ld
 
-NAME=kitsune
+NAME = kitsune
 
 ELF_KERNEL = $(NAME).elf
 QEMU_KERNEL = $(NAME)-qemu.elf

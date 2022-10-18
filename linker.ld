@@ -6,6 +6,7 @@ SECTIONS
 
     /* For AArch64, use . = 0x80000; */
     __start = .;
+
     __text_start = .;
     .text : {
         *(.text.boot)
@@ -37,19 +38,9 @@ SECTIONS
     __bss_end = .;
     __bss_size = __bss_end - __bss_start;
 
-    /* . = 0x10000; */
     .text.exception_vector : {
         *(.text.exception_vector)
     }
-
-    /* Define tail first
-    . = 0x101000;
-    __tail_start = .;
-    .tail : {
-        tail.o(*)
-    }
-    __tail_end = .;
-    */
 
     __end = .;
 }

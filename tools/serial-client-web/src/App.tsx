@@ -127,7 +127,7 @@ function App() {
           {bookmarks.length && (
             <Box>
               <Heading size='sm'>Bookmarks</Heading>
-              <Bookmarks value={bookmarks}
+              <Bookmarks value={bookmarks} selected={address}
                 onClick={address => setAddress(address)}
                 onDelete={index => removeBookmarkAt(index)}
               />

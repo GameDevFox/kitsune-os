@@ -125,6 +125,16 @@ void print_timer() {
   uart_puts(EOL);
 }
 
+void call_instruction() {
+  // Write instruction to our function
+  *(volatile size_t*)(&live_instruction) = binary_entry;
+
+  // Call function and print result
+  size_t result = live_fn();
+  word_to_hex(result, uart_putc);
+  // uart_puts(EOL);
+}
+
 void generate_mrc(bool is_mrc) {
   // uart_puts("coproc" EOL);
   char coproc = getb();
@@ -193,16 +203,6 @@ void performance_test() {
   perf_test();
   print_cycle_counter_list();
   uart_puts("Done" EOL EOL);
-}
-
-void call_instruction() {
-  // Write instruction to our function
-  *(volatile size_t*)(&live_instruction) = binary_entry;
-
-  // Call function and print result
-  size_t result = live_fn();
-  word_to_hex(result, uart_putc);
-  // uart_puts(EOL);
 }
 
 void do_halt() {
@@ -338,12 +338,12 @@ void command_handler(char input) {
 
     case 'a': uart_puts(VT_SAVE VT_HOME VT_RED "Red Text" EOL VT_DEFAULT VT_LOAD); break;
     case 's': do_enable_cache(); break;
-    case 'd': print_cursor_pos(); break;
-    case 'f': print_vt_size(); break;
+    // case 'd': print_cursor_pos(); break;
+    // case 'f': print_vt_size(); break;
     case 'h': print_performance_counter(); break;
     case 'j': set_input_handler(raw_handler); break;
-    case 'k': vt_fill('X'); break;
-    case 'l': vt_fill(' '); break;
+    // case 'k': vt_fill('X'); break;
+    // case 'l': vt_fill(' '); break;
 
     case 'z': init_irq(); break;
     case 'x': write_timer_compare(1, binary_entry); break;
@@ -389,35 +389,35 @@ void root_handler(char c) {
 }
 
 void set_input_handler(void (*handler)(char)) {
-  char* label;
+  // char* label;
 
-  char* color = VT_WHITE;
-  char* bg_color = VT_BG_RED;
+  // char* color = VT_WHITE;
+  // char* bg_color = VT_BG_RED;
 
-  if(handler == main_handler) {
-    label = "Normal Mode";
-    color = VT_BLACK;
-    bg_color = VT_BG_GREEN;
-  }
-  if(handler == single_command_handler)
-    label = "Single Command Mode";
-  if(handler == command_handler)
-    label = "Command Mode";
-  if(handler == raw_handler)
-    label = "Raw Mode";
+  // if(handler == main_handler) {
+  //   label = "Normal Mode";
+  //   color = VT_BLACK;
+  //   bg_color = VT_BG_GREEN;
+  // }
+  // if(handler == single_command_handler)
+  //   label = "Single Command Mode";
+  // if(handler == command_handler)
+  //   label = "Command Mode";
+  // if(handler == raw_handler)
+  //   label = "Raw Mode";
 
-  uart_puts(VT_SAVE);
+  // uart_puts(VT_SAVE);
 
   // struct VT_Size size = vt_get_size();
-  vt_set_pos(1, 1);
+  // vt_set_pos(1, 1);
 
-  uart_puts(color);
-  uart_puts(bg_color);
-  uart_puts(" == ");
-  uart_puts(label);
-  uart_puts(" == " EOL VT_DEFAULT VT_BG_DEFAULT);
+  // uart_puts(color);
+  // uart_puts(bg_color);
+  // uart_puts(" == ");
+  // uart_puts(label);
+  // uart_puts(" == " EOL VT_DEFAULT VT_BG_DEFAULT);
 
-  uart_puts(VT_LOAD);
+  // uart_puts(VT_LOAD);
 
   input_handler = handler;
 }

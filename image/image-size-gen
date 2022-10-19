@@ -1,0 +1,24 @@
+#!/bin/bash
+
+reverse () {
+  result=''
+
+  for i in {0..3}; do
+    index=$((i*2))
+    result="${1:$index:2}$result"
+  done
+
+  echo -n $result;
+}
+
+to_little_endian () {
+  value_hex=$(bc --quiet <(echo "obase=16; $1; halt"))
+  value_big_endian=$(printf "%08s\n" $value_hex | tr ' ' 0)
+  reverse $value_big_endian
+}
+
+sizes=$(identify $1 | awk '{ print $3 }' | tr x ' ')
+
+(for size in $sizes; do
+  to_little_endian $size
+done) | xxd --revert --plain > $1.data

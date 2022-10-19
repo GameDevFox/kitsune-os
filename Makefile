@@ -8,6 +8,7 @@ all: $(ELF_KERNEL) $(QEMU_KERNEL) $(BINARY_KERNEL)
 
 clean:
 	find . -type f -name '*.o' -delete
+	find . -type f -name '*.data' -delete
 	rm -rf $(ELF_KERNEL) $(QEMU_KERNEL) $(BINARY_KERNEL)
 
 $(ELF_KERNEL): $(LINKER_FILE) $(BOOT_OBJS) $(CORE_OBJS) image/logo.o config/raspberry-pi-4b.o

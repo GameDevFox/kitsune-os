@@ -1,3 +1,4 @@
+*.data
 *.elf
 *.img
 *.o

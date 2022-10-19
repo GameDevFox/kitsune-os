@@ -28,7 +28,11 @@ const tcpMode = () => {
 
 const charDeviceMode = async (charDev: string) => {
     // Set baud rate to 115200
-    const process = spawn(`stty`, ['--file', charDev, '115200']);
+    const process = spawn(`stty`, [
+        '--file', charDev,
+        '115200', '-icrnl', '-opost', '-isig',
+        '-icanon', '-iexten', '-echo',
+    ]);
 
     process.on('close', code => {
         if(code)

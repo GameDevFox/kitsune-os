@@ -1,7 +1,9 @@
 include ../vars.mk
 
-%.data: %.png
-	magick $*.png -separate -swap 0,2 -combine rgba:$*.data
+%.o: %.png
+	./image-size-gen $*.png
 
-%.o: %.data
+	magick $*.png -separate -swap 0,2 -combine rgba:- >> $*.png.data
+	mv $*.png.data $*.data
+
 	$(PREFIX)ld -r -b binary $*.data -o $*.o

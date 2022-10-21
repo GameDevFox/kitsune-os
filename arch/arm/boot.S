@@ -13,6 +13,11 @@
 _start:
   // Setup the stack and save r0, r1, r2
   ldr sp, =_start
+
+  // replace r2 with "_binary___dts_4_model_b_dtb_start" if zero
+  cmp r2, #0
+  ldreq r2, =_binary___dts_4_model_b_dtb_start
+
   push {r0-r2}
 
 disable_extra_cores:

@@ -158,5 +158,10 @@ export const buildRestApp = (write: (data: Uint8Array) => void) => {
     });
   });
 
+  app.get("/print-device-tree", (req, res) => {
+    write(Buffer.from("d"));
+    res.send({ done: true });
+  });
+
   return app;
 };

@@ -10,7 +10,7 @@ import {
   InputGroup, InputLeftAddon, InputRightElement, Stack, useColorMode,
 } from '@chakra-ui/react';
 
-import { clear, draw, sayHello } from './api';
+import { clear, draw, printDeviceTree, sayHello } from './api';
 import { Bookmark, Bookmarks } from './Bookmarks';
 import { MemoryTable } from './memory-table';
 import { CoprocRegisters } from './CoprocRegisters';
@@ -75,6 +75,7 @@ function App() {
           </Button>
           <Button onClick={sayHello}>Hello!</Button>
           <Button onClick={clear}>Clear</Button>
+          <Button onClick={printDeviceTree}>Print Device Tree</Button>
           <Button onClick={() => draw('curve')}>Draw Curve</Button>
           <Button onClick={() => draw('mascot')}>Draw Mascot</Button>
           <Button onClick={() => draw('logo')}>Draw Logo</Button>

@@ -6,6 +6,7 @@
 
 #include "arm.h"
 #include "convert.h"
+#include "device-tree.h"
 #include "fb.h"
 #include "gic.h"
 #include "input.h"
@@ -312,6 +313,8 @@ void raw_handler(char c) {
   uart_putc(' ');
 }
 
+void* device_tree = 0;
+
 void command_handler(char input) {
   switch(input) {
     case '`': generate_mrc(1); break;
@@ -338,7 +341,7 @@ void command_handler(char input) {
 
     case 'a': uart_puts(VT_SAVE VT_HOME VT_RED "Red Text" EOL VT_DEFAULT VT_LOAD); break;
     case 's': do_enable_cache(); break;
-    // case 'd': print_cursor_pos(); break;
+    case 'd': process_device_tree(device_tree); break;
     // case 'f': print_vt_size(); break;
     case 'h': print_performance_counter(); break;
     case 'j': set_input_handler(raw_handler); break;
@@ -477,17 +480,15 @@ void main(uint32_t r0, uint32_t r1, uint32_t atags)
   // Initialize UART for Raspberry Pi
   uart_init();
 
-  uart_puts("Hello, Kitsune!" EOL);
-  uart_puts(EOL);
+  uart_puts(EOL "=== Hello, Kitsune ===" EOL EOL);
 
   print_params(r0, r1, atags);
 
-  // uart_puts("DEVICE TREE:" EOL);
-  // memory_range_out((size_t*)atags, 32, uart_putc);
+  device_tree = (void*) atags;
 
   draw_logo();
 
-  uart_puts("READY" EOL);
+  uart_puts(EOL "READY" EOL);
 
   input_loop();
 }

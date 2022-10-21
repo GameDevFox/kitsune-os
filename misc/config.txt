@@ -79,6 +79,6 @@ arm_boost=1
 
 [all]
 enable_uart=1
-dtoverlay=pi3-disable-bt
+dtoverlay=disable-bt
 
 kernel=kitsune.img

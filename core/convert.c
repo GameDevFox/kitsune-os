@@ -1,4 +1,4 @@
-#include <stddef.h>
+#include "convert.h"
 
 char* hex_table = "0123456789abcdef";
 
@@ -32,6 +32,17 @@ void word_to_hex(size_t word, void (*out)(unsigned char)) {
   byte_to_hex(word >> 16 & 0xff, out);
   byte_to_hex(word >> 8 & 0xff, out);
   byte_to_hex(word >> 0 & 0xff, out);
+}
+
+uint32_t swap_bytes(uint32_t value) {
+  uint32_t result = 0;
+
+  result = result | (value >> 24 & 0xff);
+  result = result | (value >> 8 & 0xff00);
+  result = result | (value << 8 & 0xff0000);
+  result = result | (value << 24 & 0xff000000);
+
+  return result;
 }
 
 void read_digit(size_t* out, char digit) {

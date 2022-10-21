@@ -1,8 +1,9 @@
 // AArch32 mode
 
 #define CPSR_MODE_MASK 0x1f
-#define CPSR_DISABLE_IRQ_MASK 1 << 7
+
 #define CPSR_DISABLE_FIQ_MASK 1 << 6
+#define CPSR_DISABLE_IRQ_MASK 1 << 7
 #define CPSR_DISABLE_IRQ_FIQ_MASK (CPSR_DISABLE_IRQ_MASK | CPSR_DISABLE_FIQ_MASK)
 
 #define USR_MODE        0x10 // User

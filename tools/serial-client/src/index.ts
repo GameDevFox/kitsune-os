@@ -44,6 +44,7 @@ const charDeviceMode = async (charDev: string) => {
 
                 const data = Buffer.alloc(bytesRead);
                 buffer.copy(data, 0, 0, bytesRead);
+
                 outHandler(data);
             }
         });

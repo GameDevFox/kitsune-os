@@ -1,0 +1,13 @@
+{
+  "name": "tools",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Edward Nicholes Jr. <GameDevFox@gmail.com>",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "workspaces": [
+    "common",
+    "serial-client",
+    "serial-client-web"
+  ]
+}

@@ -2,3 +2,6 @@
 *.elf
 *.img
 *.o
+
+dist
+node_modules

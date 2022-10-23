@@ -1,0 +1,14 @@
+{
+  "name": "@kitsune-os/common",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "typescript": "^4.8.4"
+  }
+}

@@ -62,7 +62,7 @@ void draw_image(uint32_t* image_data, uint32_t x_pos, uint32_t y_pos) {
 
   for(uint32_t y = 0; y < height; y++) {
     for(uint32_t x = 0; x < width; x++) {
-      uint32_t color = *(image_data++);
+      uint32_t color = *image_data++;
 
       if(!(color >> 24))
         continue;
@@ -73,8 +73,8 @@ void draw_image(uint32_t* image_data, uint32_t x_pos, uint32_t y_pos) {
 }
 
 extern const uint32_t _binary_logo_data_start;
-extern const uint32_t _binary_logo_data_end;
-extern const uint32_t _binary_logo_data_size;
+// extern const uint32_t _binary_logo_data_end;
+// extern const uint32_t _binary_logo_data_size;
 
 #define LOGO_WIDTH  168
 #define LOGO_HEIGHT 256
@@ -83,7 +83,7 @@ void draw_logo() {
   uart_puts("Drawing logo...");
 
   draw_image(
-    (uint32_t*)&_binary_logo_data_start,
+    (uint32_t*) &_binary_logo_data_start,
     (FB_WIDTH / 2) - (LOGO_WIDTH / 2), // x pos
     (FB_HEIGHT / 2) - (LOGO_HEIGHT / 2) // y pos
   );

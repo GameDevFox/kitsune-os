@@ -126,12 +126,12 @@ void print_timer() {
   uart_puts(EOL);
 }
 
-void call_instruction() {
+void call_instruction(uint32_t instruction, uint32_t arg) {
   // Write instruction to our function
-  *(volatile size_t*)(&live_instruction) = binary_entry;
+  *(volatile size_t*)(&live_instruction) = instruction;
 
   // Call function and print result
-  size_t result = live_fn();
+  size_t result = live_fn(arg);
   word_to_hex(result, uart_putc);
   // uart_puts(EOL);
 }
@@ -152,10 +152,22 @@ void generate_mrc(bool is_mrc) {
 
   char rt = 0;
   uint32_t flags = is_mrc ? ASM_MRC_FLAG : 0;
-  binary_entry = asm_mrc_mcr(coproc, opc1, rt, cr_n, cr_m, opc2, flags);
-  // word_to_hex(binary_entry, uart_putc);
-  call_instruction();
-  // uart_puts(EOL);
+
+  uint32_t instruction = asm_mrc_mcr(coproc, opc1, rt, cr_n, cr_m, opc2, flags);
+
+  uint32_t value = 0;
+  if(!is_mrc) { // If write
+    value |= getb() << 0x1c;
+    value |= getb() << 0x18;
+    value |= getb() << 0x14;
+    value |= getb() << 0x10;
+    value |= getb() << 0x0c;
+    value |= getb() << 0x08;
+    value |= getb() << 0x04;
+    value |= getb() << 0x00;
+  }
+
+  call_instruction(instruction, value);
 }
 
 void write_word() {
@@ -330,7 +342,7 @@ void command_handler(char input) {
     case '9': draw_logo(); break;
     case '0': fb_clear(); break;
 
-    case '!': call_instruction(); break;
+    case '!': call_instruction(binary_entry, 0); break;
     case '@': disable_polling(); break;
     case '=': binary_entry_mode(); break;
 

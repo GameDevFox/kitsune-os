@@ -1,19 +1,19 @@
 import _ from 'lodash';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-import { BsBookmark, BsXLg } from 'react-icons/bs';
+import { BsBookmark } from 'react-icons/bs';
 import { ImArrowDown, ImArrowUp } from 'react-icons/im';
 
 import {
-  Box,
-  Button, ButtonGroup, Center, Heading, Icon, IconButton, Input,
-  InputGroup, InputLeftAddon, InputRightElement, Stack, useColorMode,
+  Box, Button, ButtonGroup, Center, Heading,
+  Icon, IconButton, Stack, useColorMode,
 } from '@chakra-ui/react';
 
 import { clear, draw, printDeviceTree, sayHello } from './api';
 import { Bookmark, Bookmarks } from './Bookmarks';
-import { MemoryTable } from './memory-table';
-import { CoprocRegisters } from './CoprocRegisters';
+import { MemoryTable } from './MemoryTable';
+import { CoprocRegisters } from './coproc-registers/CoprocRegisters';
+import { Address } from './Address';
 
 const BOOKMARKS = 'bookmarks';
 
@@ -23,14 +23,7 @@ function App() {
   const { colorMode, toggleColorMode } = useColorMode();
 
   const [address, setAddress] = useState<number>(0x8000);
-  const [addressInput, setAddressInput] = useState<string>(
-    address.toString(16)
-  );
-
   const [offset, setOffset] = useState<number>(0);
-  const [offsetInput, setOffsetInput] = useState<string>(
-    offset.toString(16)
-  );
 
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(
     loadBookmarks() ||
@@ -39,17 +32,6 @@ function App() {
       { address: 0xa000 },
     ]
   );
-
-  useEffect(() => {
-    setAddressInput(address.toString(16));
-  }, [address]);
-
-  useEffect(() => {
-    setOffsetInput(offset.toString(16));
-  }, [offset]);
-
-  const updateAddress = () => setAddress(Number(`0x${addressInput}`));
-  const updateOffset = () => setOffset(Number(`0x${offsetInput}`));
 
   const updateBookmarks = (newBookmarks: Bookmark[]) => {
     setBookmarks(newBookmarks);
@@ -89,39 +71,10 @@ function App() {
             onClick={createBookmark}
           />
 
-          <InputGroup>
-            <InputLeftAddon paddingInlineEnd='1'>Address: 0x</InputLeftAddon>
-            <Input
-              paddingInlineStart='1'
-              type='input' value={addressInput}
-              onChange={e => setAddressInput(e.currentTarget.value)}
-              onKeyDown={e => {
-                if(e.code === 'Enter')
-                  updateAddress();
-              }}
-            />
-          </InputGroup>
-
-          <InputGroup>
-            <InputLeftAddon paddingInlineEnd='1'>Offset: 0x</InputLeftAddon>
-            <Input
-              paddingInlineStart='1'
-              type='input' value={offsetInput}
-              onChange={e => setOffsetInput(e.currentTarget.value)}
-              onKeyDown={e => {
-                if(e.code === 'Enter')
-                  updateOffset();
-              }}
-            />
-            <InputRightElement>
-              <IconButton
-                aria-label='clear' size='sm' icon={<Icon as={BsXLg}/>}
-                onClick={() => setOffset(0)}
-              />
-            </InputRightElement>
-          </InputGroup>
-
-          <Button onClick={updateAddress}>Go</Button>
+          <Address
+            address={address} onChangeAddress={setAddress}
+            offset={offset} onChangeOffset={setOffset}
+          />
         </Stack>
 
         <Stack direction='row'>

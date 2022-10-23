@@ -1,5 +1,5 @@
 {
-  "name": "kitsune-os-serial-client",
+  "name": "@kitsune-os/serial-client",
   "version": "1.0.0",
   "author": "Edward Nicholes Jr.",
   "license": "MIT",

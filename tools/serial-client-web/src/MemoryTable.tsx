@@ -49,7 +49,7 @@ export const MemoryTable = (props: MemoryTableProps) => {
     const hexCells = [0, 4, 8, 12].map(value => (
       <Td
         key={`cell${value}`} padding='1' paddingRight='4'
-        color={value % 8 === 0 ? 'auto' : 'grey'}
+        color={value % 8 === 0 ? 'auto' : 'blue.500'}
       >
         <pre>
           {
@@ -64,7 +64,7 @@ export const MemoryTable = (props: MemoryTableProps) => {
     const textCells = [0, 4, 8, 12].map(value => (
       <Td
         key={`cell${value}`} padding='1'
-        color={value % 8 === 0 ? 'auto' : 'grey'}
+        color={value % 8 === 0 ? 'auto' : 'blue.500'}
       >
         <pre>
           {

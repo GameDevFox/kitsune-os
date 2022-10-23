@@ -1,11 +1,10 @@
+import { json } from 'body-parser';
 import cors from 'cors';
 import express from 'express';
 
-import { coprocRegisterCodes as coprocRegs } from '../data/coproc-registers';
+import { coprocRegisterCodes } from '@kitsune-os/common';
 
 import { defaultOutHandler, OutHandler, setOutHandler } from './output-handler';
-
-const coprocRegisterCodes: Record<string, number[]> = coprocRegs;
 
 const ReadCommand = (start: number, length: number) => {
   const buf = Buffer.alloc(9);
@@ -83,15 +82,16 @@ export const buildRestApp = (write: (data: Uint8Array) => void) => {
   const app = express();
 
   app.use(cors());
+  app.use(json({ strict: false }));
 
   app.get("/hello", (req, res) => {
     write(Buffer.from("1"));
-    res.send({ done: true });
+    res.send({ success: true });
   });
 
   app.get("/clear", (req, res) => {
     write(Buffer.from("0"));
-    res.send({ done: true });
+    res.send({ success: true });
   });
 
   app.get("/draw/:name", (req, res) => {
@@ -111,7 +111,7 @@ export const buildRestApp = (write: (data: Uint8Array) => void) => {
         console.error(`No such object to draw: ${name}`);
     }
 
-    res.send({ done: true });
+    res.send({ success: true });
   });
 
   app.get("/memory/:start/length/:length", (req, res) => {
@@ -122,27 +122,34 @@ export const buildRestApp = (write: (data: Uint8Array) => void) => {
       command: ReadCommand(start, length),
       bytesToRead: length,
       fn: data => {
-        res.send({ done: true, data });
+        res.send({ success: true, data });
       }
     });
   });
 
   app.get("/coproc-registers", (req, res) => {
-    res.send({ done: true, names: Object.keys(coprocRegisterCodes) });
+    res.send({ success: true, registers: coprocRegisterCodes });
   });
 
   app.get("/coproc-registers/:name", (req, res) => {
-    const name = req.params.name;
+    const { name } = req.params;
 
     if(!(name in coprocRegisterCodes)) {
       res.sendStatus(404);
       return;
     }
 
-    const code = coprocRegisterCodes[name];
+    const { args, isReadable } = coprocRegisterCodes[name];
+    if(!isReadable) {
+      res.status(400).send({
+        success: false,
+        message: `Coproc register is not readable: ${name}`
+      });
+      return;
+    }
 
-    const codeStr = code.map(number => number.toString(16)).join('');
-    const command =  Buffer.from('`' + codeStr);
+    const argStr = args.map(number => number.toString(16)).join('');
+    const command =  Buffer.from('`' + argStr);
 
     addRequest({
       command,
@@ -153,14 +160,44 @@ export const buildRestApp = (write: (data: Uint8Array) => void) => {
         const buffer = Buffer.alloc(4);
         buffer.writeUint32LE(parseInt(`0x${dataStr}`));
 
-        res.send({ done: true, data: buffer });
+        res.send({ success: true, data: buffer });
+      }
+    });
+  });
+
+  app.post("/coproc-registers/:name", (req, res) => {
+    const { name } = req.params;
+    const { value } = req.body;
+
+    if(!(name in coprocRegisterCodes)) {
+      res.sendStatus(404);
+      return;
+    }
+
+    const { args, isWriteable } = coprocRegisterCodes[name];
+    if(!isWriteable) {
+      res.status(400).send({
+        success: false,
+        message: `Coproc register is not writeable: ${name}`
+      });
+      return;
+    }
+
+    const argStr = args.map(number => number.toString(16)).join('');
+    const command =  Buffer.from('~' + argStr + value);
+
+    addRequest({
+      command,
+      bytesToRead: 0,
+      fn: () => { // Ignore response for now
+        res.send({ success: true });
       }
     });
   });
 
   app.get("/print-device-tree", (req, res) => {
     write(Buffer.from("d"));
-    res.send({ done: true });
+    res.send({ success: true });
   });
 
   return app;

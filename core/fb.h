@@ -3,5 +3,6 @@
 
 void fb_test();
 void fb_test_2();
+void draw_mascot();
 void draw_logo();
 void fb_clear();

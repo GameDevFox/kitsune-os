@@ -339,6 +339,7 @@ void command_handler(char input) {
     case '5': asm(".word 0xffffffff"); break;
     case '6': fb_test(); break;
     case '7': fb_test_2(); break;
+    case '8': draw_mascot(); break;
     case '9': draw_logo(); break;
     case '0': fb_clear(); break;
 
@@ -498,7 +499,9 @@ void main(uint32_t r0, uint32_t r1, uint32_t atags)
 
   device_tree = (void*) atags;
 
+  fb_test_2();
   draw_logo();
+  // draw_mascot();
 
   uart_puts(EOL "READY" EOL);
 

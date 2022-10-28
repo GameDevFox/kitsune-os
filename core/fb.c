@@ -64,12 +64,27 @@ void draw_image(uint32_t* image_data, uint32_t x_pos, uint32_t y_pos) {
     for(uint32_t x = 0; x < width; x++) {
       uint32_t color = *image_data++;
 
-      if(!(color >> 24))
+      if(color >> 24 != 0xff)
         continue;
 
       fb_write(get_pixel_offset(x_pos + x, y_pos + y) * 4, color);
     }
   }
+}
+
+extern const uint32_t _binary_mascot_data_start;
+extern const uint32_t _binary_mascot_data_end;
+extern const uint32_t _binary_mascot_data_size;
+
+void draw_mascot() {
+  uart_puts("Drawing mascot...");
+
+  draw_image(
+    (uint32_t*) &_binary_mascot_data_start,
+    510, 280 // x, y
+  );
+
+  uart_puts(" Done!\r\n");
 }
 
 extern const uint32_t _binary_logo_data_start;

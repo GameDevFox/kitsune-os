@@ -10,16 +10,6 @@ char getb() {
   return char_as_hex(input);
 }
 
-size_t uart_getw() {
-  size_t word = 0;
-  word |= (uart_getc() << 0);
-  word |= (uart_getc() << 8);
-  word |= (uart_getc() << 16);
-  word |= (uart_getc() << 24);
-
-  return word;
-}
-
 void binary_entry_mode() {
   uart_puts("== ENTRY MODE ==\r\n");
 

@@ -8,6 +8,8 @@ extern int raspi;
 
 extern uint32_t mmio_base;
 
+#define ONE "#1"
+
 // Memory-Mapped I/O output
 static void mmio_write(uint32_t reg, uint32_t data) {
   write(mmio_base + reg, data);
@@ -17,8 +19,6 @@ static void mmio_write(uint32_t reg, uint32_t data) {
 static uint32_t mmio_read(uint32_t reg) {
   return read(mmio_base + reg);
 }
-
-#define ONE "#1"
 
 // Loop <delay> times in a way that the compiler won't optimize away
 static void delay(uint32_t count) {
@@ -85,13 +85,25 @@ void uart_init() {
   mmio_write(UART0_CR, (1 << 0) | (1 << 8) | (1 << 9));
 }
 
+// OUTPUT
 void uart_putc(unsigned char c) {
   // Wait for UART to become ready to transmit.
   while(mmio_read(UART0_FR) & (1 << 5)) {}
   mmio_write(UART0_DR, c);
 }
 
-unsigned char uart_getc(void) {
+void uart_puts(const char* str) {
+  for(uint32_t i = 0; str[i] != '\0'; i++)
+    uart_putc((unsigned char) str[i]);
+}
+
+void uart_write(const char* str, uint32_t count) {
+  for(uint32_t i = 0; i < count; i++)
+    uart_putc((unsigned char) str[i]);
+}
+
+// INPUT
+unsigned char uart_getc() {
   // Wait for UART to have received something.
   while(mmio_read(UART0_FR) & (1 << 4)) {}
   return mmio_read(UART0_DR);
@@ -106,7 +118,13 @@ void uart_getc_pipe(void out()) {
   }
 }
 
-void uart_puts(const char* str) {
-  for(uint32_t i = 0; str[i] != '\0'; i++)
-    uart_putc((unsigned char) str[i]);
+uint32_t uart_getw() {
+  uint32_t result = 0;
+
+  result |= uart_getc() << 0x00;
+  result |= uart_getc() << 0x08;
+  result |= uart_getc() << 0x10;
+  result |= uart_getc() << 0x18;
+
+  return result;
 }

@@ -1,9 +1,4 @@
-void uart_init();
-void uart_putc(unsigned char c);
-unsigned char uart_getc(void);
-void uart_getc_pipe();
-
-void uart_puts(const char* str);
+#include <stdint.h>
 
 enum {
     // The offsets for reach register.
@@ -44,3 +39,14 @@ enum {
     MBOX_STATUS  = (MBOX_BASE + 0x18),
     MBOX_WRITE   = (MBOX_BASE + 0x20)
 };
+
+void uart_init();
+
+void uart_putc(unsigned char c);
+void uart_write(const char* str, uint32_t count);
+void uart_puts(const char* str);
+
+unsigned char uart_getc();
+void uart_getc_pipe();
+uint32_t uart_getw();
+

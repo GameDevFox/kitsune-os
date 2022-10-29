@@ -4,80 +4,20 @@ import express from 'express';
 
 import { coprocRegisterCodes } from '@kitsune-os/common';
 
-import { defaultOutHandler, OutHandler, setOutHandler } from './output-handler';
+import { Request } from './request';
 
-const ReadCommand = (start: number, length: number) => {
-  const buf = Buffer.alloc(9);
+const ReadCommand = (targetId: number, start: number, length: number) => {
+  const buf = Buffer.alloc(10);
   buf.write("R");
-  buf.writeUIntLE(start, 1, 4); // Start
-  buf.writeUIntLE(length, 5, 4); // Length
+  buf.writeUIntLE(targetId, 1, 1);
+  buf.writeUIntLE(start, 2, 4); // Start
+  buf.writeUIntLE(length, 6, 4); // Length
 
   return buf;
 };
 
-// TODO: What do we do with the extra bytes???
-const ReadBytesHandler = (length: number, fn: (data: Buffer) => void) => {
-  let index = 0;
-  const result = Buffer.alloc(length);
-
-  const handler: OutHandler = data => {
-    const byteCount = data.length;
-
-    data.copy(result, index, 0, byteCount);
-    index += byteCount;
-
-    if(index >= length)
-      fn(result);
-  };
-
-  return handler;
-};
-
-interface Request {
-  command: Buffer;
-  bytesToRead: number;
-  fn: (buffer: Buffer) => void;
-}
-
-const requests: Request[] = [];
-
-export const buildRestApp = (write: (data: Uint8Array) => void) => {
-
-  const addRequest = (request: Request) => {
-    requests.push(request);
-
-    if(requests.length > 1)
-      return;
-
-    handleRequests();
-  };
-
-  const handleRequests = async () => {
-    const request = requests[0];
-    const { command, bytesToRead, fn } = request;
-
-    if(bytesToRead) {
-      const handler = ReadBytesHandler(bytesToRead, async data => {
-        fn(data);
-
-        // Remove to mark as done
-        requests.shift();
-
-        if(requests.length) {
-          // Do the next one
-          await handleRequests();
-        } else {
-          // We're done... restore the default handler
-          setOutHandler(defaultOutHandler);
-        }
-      });
-      setOutHandler(handler);
-    }
-;
-    await write(command);
-
-    requests.shift();
-  };
+export const buildRestApp = (write: (data: Uint8Array) => void,) => {
+  const request = Request(write);
 
   const app = express();
 
@@ -118,12 +58,9 @@ export const buildRestApp = (write: (data: Uint8Array) => void) => {
     const start = Number(req.params.start);
     const length = Number(req.params.length);
 
-    addRequest({
-      command: ReadCommand(start, length),
-      bytesToRead: length,
-      fn: data => {
-        res.send({ success: true, data });
-      }
+    request({
+      command: targetId => ReadCommand(targetId, start, length),
+      fn: data => res.send({ success: true, data }),
     });
   });
 
@@ -149,25 +86,25 @@ export const buildRestApp = (write: (data: Uint8Array) => void) => {
     }
 
     const argStr = args.map(number => number.toString(16)).join('');
-    const command =  Buffer.from('`' + argStr);
+    const command = (targetId: number) => {
+      const buffer = Buffer.alloc(2 + argStr.length);
+      buffer.write('`', 0);
+      buffer.writeUintLE(targetId, 1, 1);
+      buffer.write(argStr, 2);
+      return buffer;
+    };
 
-    addRequest({
+    request({
       command,
-      bytesToRead: 8,
-      fn: data => {
-        let dataStr: any = data.toString();
-
-        const buffer = Buffer.alloc(4);
-        buffer.writeUint32LE(parseInt(`0x${dataStr}`));
-
-        res.send({ success: true, data: buffer });
-      }
+      fn: data => res.send({ success: true, data }),
     });
   });
 
-  app.post("/coproc-registers/:name", (req, res) => {
+  app.post("/coproc-registers/:name", async (req, res) => {
     const { name } = req.params;
     const { value } = req.body;
+
+    const valueNum = parseInt(value, 16);
 
     if(!(name in coprocRegisterCodes)) {
       res.sendStatus(404);
@@ -184,14 +121,22 @@ export const buildRestApp = (write: (data: Uint8Array) => void) => {
     }
 
     const argStr = args.map(number => number.toString(16)).join('');
-    const command =  Buffer.from('~' + argStr + value);
 
-    addRequest({
+    // TODO: Find a better way to write command buffers
+    const command = (targetId: number) => {
+      const buffer = Buffer.alloc(1 + 1 + argStr.length + 4);
+
+      let index = 0;
+      buffer.write('~', index);  // 0
+      buffer.writeUintLE(targetId, index += 1, 1); // 1
+      buffer.write(argStr, index += 1); // 4
+      buffer.writeUintLE(valueNum, index += argStr.length, 4);
+      return buffer;
+    };
+
+    request({
       command,
-      bytesToRead: 0,
-      fn: () => { // Ignore response for now
-        res.send({ success: true });
-      }
+      fn: data => res.send({ success: true, data }),
     });
   });
 

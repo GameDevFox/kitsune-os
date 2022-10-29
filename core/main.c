@@ -10,8 +10,8 @@
 #include "fb.h"
 #include "gic.h"
 #include "input.h"
-#include "mem.h"
 #include "output.h"
+#include "serial-protocol.h"
 #include "system-timer.h"
 #include "uart.h"
 #include "vt.h"
@@ -19,11 +19,9 @@
 extern size_t binary_entry;
 
 void print_address(size_t* addr, void (*out)(unsigned char)) {
-  word_to_hex((uint32_t)addr, out);
+  uint32_t mem = *(uint32_t*) addr;
 
-  uart_puts(": 0x");
-
-  uint32_t mem = *(uint32_t*)addr;
+  word_to_hex((uint32_t) addr, out); uart_puts(": 0x");
   word_to_hex(mem, out);
 }
 
@@ -48,46 +46,15 @@ void print_cycle_counter_list() {
   }
 }
 
-void walk_memory(size_t* start, void (*out)(unsigned char)) {
-  uart_puts("== MEMORY WALK ==" EOL);
-
-  size_t* current = start;
-
-  char increment = 1;
-  while(true) {
-    while(increment) {
-      print_address(current, out);
-      out('\r');
-      out('\n');
-
-      current++;
-      increment--;
-    }
-
-    char input = uart_getc();
-    if(input == '0' || input == 0x1b) // '0' or Escape
-      break;
-
-    char hex = char_as_hex(input);
-    if(hex == 0xff) {
-      increment = 1;
-    } else {
-      increment = hex;
-      uart_puts("--------" EOL);
-    }
-  }
-
-  uart_puts("== WALK FINISHED ==" EOL);
-}
-
 void read_memory() {
-  size_t start = uart_getw();
-  size_t length = uart_getw();
+  char target = uart_getc();
+  uint32_t start = uart_getw();
+  uint32_t length = uart_getw();
 
-  for(size_t i = start; i < start + length; i++) {
-    char value = *(char*)i;
-    uart_putc(value);
-  }
+  sp_frame(
+    sp_target(target);
+    sp_write((char*) start, length);
+  );
 }
 
 void write_memory() {
@@ -126,48 +93,37 @@ void print_timer() {
   uart_puts(EOL);
 }
 
-void call_instruction(uint32_t instruction, uint32_t arg) {
+uint32_t call_instruction(uint32_t instruction, uint32_t arg) {
   // Write instruction to our function
   *(volatile size_t*)(&live_instruction) = instruction;
 
   // Call function and print result
-  size_t result = live_fn(arg);
-  word_to_hex(result, uart_putc);
-  // uart_puts(EOL);
+  return live_fn(arg);
 }
 
 void generate_mrc(bool is_mrc) {
-  // uart_puts("coproc" EOL);
+  char target = uart_getc();
+
   char coproc = getb();
-  // uart_puts("opc1" EOL);
   char opc1 = getb();
-  // uart_puts("Rt" EOL);
-  // char Rt = getb();
-  // uart_puts("CRn" EOL);
   char cr_n = getb();
-  // uart_puts("CRm" EOL);
   char cr_m = getb();
-  // uart_puts("opc2" EOL);
   char opc2 = getb();
-
-  char rt = 0;
-  uint32_t flags = is_mrc ? ASM_MRC_FLAG : 0;
-
-  uint32_t instruction = asm_mrc_mcr(coproc, opc1, rt, cr_n, cr_m, opc2, flags);
 
   uint32_t value = 0;
   if(!is_mrc) { // If write
-    value |= getb() << 0x1c;
-    value |= getb() << 0x18;
-    value |= getb() << 0x14;
-    value |= getb() << 0x10;
-    value |= getb() << 0x0c;
-    value |= getb() << 0x08;
-    value |= getb() << 0x04;
-    value |= getb() << 0x00;
+    value = uart_getw();
   }
 
-  call_instruction(instruction, value);
+  char rt = 0; // Register
+  uint32_t flags = is_mrc ? ASM_MRC_FLAG : 0;
+  uint32_t instruction = asm_mrc_mcr(coproc, opc1, rt, cr_n, cr_m, opc2, flags);
+  uint32_t result = call_instruction(instruction, value);
+
+  sp_frame(
+    sp_target(target);
+    sp_putw(result);
+  );
 }
 
 void write_word() {
@@ -287,30 +243,6 @@ void raw_output(char c) {
 size_t last_count = 0;
 size_t counter = 0;
 
-void run_counter() {
-  size_t count = get_performance_counter();
-  count = count / 0x10000000;
-
-  if(count == last_count)
-    return;
-
-  if(count < last_count)
-    counter++;
-  else
-    counter += count - last_count;
-
-  last_count = count;
-
-  uart_puts(VT_SAVE);
-
-  vt_set_pos(1, 2);
-  uart_puts(VT_BG_RED VT_BLACK);
-  write_digits(counter, uart_putc);
-  uart_puts(VT_DEFAULT VT_BG_DEFAULT);
-
-  uart_puts(VT_LOAD);
-}
-
 #define ENTER 0x0d
 #define ESCAPE 0x1b
 #define BACKSPACE 0x7f
@@ -349,7 +281,7 @@ void command_handler(char input) {
 
     case 'q': do_toggle_irq(); break;
     case 'w': write_word(); break;
-    case 'r': walk_memory((size_t*)binary_entry, uart_putc); break;
+    // case 'r': walk_memory((size_t*)binary_entry, uart_putc); break;
     case 't': print_timer(); break;
 
     case 'a': uart_puts(VT_SAVE VT_HOME VT_RED "Red Text" EOL VT_DEFAULT VT_LOAD); break;
@@ -405,36 +337,6 @@ void root_handler(char c) {
 }
 
 void set_input_handler(void (*handler)(char)) {
-  // char* label;
-
-  // char* color = VT_WHITE;
-  // char* bg_color = VT_BG_RED;
-
-  // if(handler == main_handler) {
-  //   label = "Normal Mode";
-  //   color = VT_BLACK;
-  //   bg_color = VT_BG_GREEN;
-  // }
-  // if(handler == single_command_handler)
-  //   label = "Single Command Mode";
-  // if(handler == command_handler)
-  //   label = "Command Mode";
-  // if(handler == raw_handler)
-  //   label = "Raw Mode";
-
-  // uart_puts(VT_SAVE);
-
-  // struct VT_Size size = vt_get_size();
-  // vt_set_pos(1, 1);
-
-  // uart_puts(color);
-  // uart_puts(bg_color);
-  // uart_puts(" == ");
-  // uart_puts(label);
-  // uart_puts(" == " EOL VT_DEFAULT VT_BG_DEFAULT);
-
-  // uart_puts(VT_LOAD);
-
   input_handler = handler;
 }
 
@@ -446,7 +348,6 @@ void process_input() {
 void input_loop() {
   while(run_loop) {
     // List "processes" here
-    // run_counter();
     process_input();
   }
 }

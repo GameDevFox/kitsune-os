@@ -2,6 +2,7 @@
 #include "convert.h"
 #include "device-tree.h"
 #include "output.h"
+#include "serial-protocol.h"
 #include "uart.h"
 
 enum DeviceTreeToken {
@@ -37,7 +38,7 @@ void print_device_tree_header(struct DeviceTreeHeader* header) {
 
 void print_indent(uint32_t count) {
   while(count--) {
-    uart_putc(' ');
+    sp_putc(' ');
   }
 }
 
@@ -45,11 +46,11 @@ void process_device_tree(void* device_tree) {
   struct DeviceTreeHeader* header = device_tree;
 
   if(DEVICE_TREE_MAGIC != header->magic) {
-    uart_puts("ERROR: Won't process device tree. Bad magic: 0x");
-    word_to_hex(swap_bytes(header->magic), uart_putc);
-    uart_puts(" != 0x");
-    word_to_hex(swap_bytes(DEVICE_TREE_MAGIC), uart_putc);
-    uart_puts(EOL);
+    sp_puts("ERROR: Won't process device tree. Bad magic: 0x");
+    word_to_hex(swap_bytes(header->magic), sp_putc);
+    sp_puts(" != 0x");
+    word_to_hex(swap_bytes(DEVICE_TREE_MAGIC), sp_putc);
+    sp_puts(EOL);
     return;
   }
 
@@ -60,33 +61,33 @@ void process_device_tree(void* device_tree) {
   uint32_t* dt_struct = device_tree + swap_bytes(header->struct_offset);
   char* strings = device_tree + swap_bytes(header->strings_offset);
 
-  // uart_puts("STRUCT: "); word_to_hex((uint32_t) dt_struct, uart_putc); uart_puts(EOL);
-  // uart_puts("STRING: "); word_to_hex((uint32_t) strings, uart_putc); uart_puts(EOL);
+  // sp_puts("STRUCT: "); word_to_hex((uint32_t) dt_struct, sp_putc); sp_puts(EOL);
+  // sp_puts("STRING: "); word_to_hex((uint32_t) strings, sp_putc); sp_puts(EOL);
 
   uint32_t done = 0;
   uint32_t indent = 0;
 
   while(1) {
-    // word_to_hex(dt_struct, uart_putc); uart_puts(" ");
+    // word_to_hex(dt_struct, sp_putc); sp_puts(" ");
     enum DeviceTreeToken token = swap_bytes(*dt_struct++);
 
-    // uart_putc('#');
-    // word_to_hex(token, uart_putc); uart_putc(' ');
+    // sp_putc('#');
+    // word_to_hex(token, sp_putc); sp_putc(' ');
 
     switch(token) {
       case BEGIN_NODE:
-        uart_puts(EOL);
+        sp_puts(EOL);
         print_indent(indent);
 
         c = (char*) dt_struct;
         while(*c != 0) {
-          uart_putc(*c++);
+          sp_putc(*c++);
         }
         if(c != (char*) dt_struct)
-          uart_putc(' ');
+          sp_putc(' ');
 
         c++;
-        uart_puts("{" EOL);
+        sp_puts("{" EOL);
 
         indent += 2;
 
@@ -98,42 +99,42 @@ void process_device_tree(void* device_tree) {
         indent -= 2;
 
         print_indent(indent);
-        uart_puts("}" EOL);
+        sp_puts("}" EOL);
 
         continue;
       case PROP:
         print_indent(indent);
 
-        // uart_puts("PROP" EOL);
+        // sp_puts("PROP" EOL);
         uint32_t len = swap_bytes(*dt_struct++);
         uint32_t nameoff = swap_bytes(*dt_struct++);
 
-        uart_puts(strings + nameoff);
-        uart_puts(" = ");
+        sp_puts(strings + nameoff);
+        sp_puts(" = ");
 
         c = (char*) dt_struct;
         char* strEnd = (char*) dt_struct + len;
         for(; c < strEnd; c++) {
-          uart_putc(*c);
+          sp_putc(*c);
         }
 
         // Align to 32 bits
         dt_struct = (uint32_t*) (c + (3 - ((uint32_t) c - 1) % 4));
 
-        uart_puts(EOL);
+        sp_puts(EOL);
 
         continue;
       case NOP:
-        // uart_puts("NOP" EOL);
+        // sp_puts("NOP" EOL);
         break;
       case END:
-        uart_puts("END" EOL);
+        sp_puts("END" EOL);
         done = 1;
         break;
       default:
-        uart_puts("ERROR: Invalid token encountered: ");
-        word_to_hex(token, uart_putc);
-        uart_puts(EOL);
+        sp_puts("ERROR: Invalid token encountered: ");
+        word_to_hex(token, sp_putc);
+        sp_puts(EOL);
 
         done = 1;
         break;
@@ -143,5 +144,5 @@ void process_device_tree(void* device_tree) {
       break;
   }
 
-  uart_puts(EOL);
+  sp_puts(EOL);
 }

@@ -19,7 +19,7 @@ export const id_pfr0 = {
         { value: fromBinary('0000'), description: 'Thumb instruction set not implemented' },
         { value: fromBinary('0001'), description: 'Thumb encodings before the introduction of Thumb-2 technology implemented' },
         { value: fromBinary('0010'), description: 'Reserved' },
-        { value: fromBinary('0011'), description: 'Thumb encodings after the introduction of Thumb-2 technology implemented, for all' +
+        { value: fromBinary('0011'), description: 'Thumb encodings after the introduction of Thumb-2 technology implemented, for all ' +
           '16-bit and 32-bit Thumb basic instructions' },
       ]
     ),

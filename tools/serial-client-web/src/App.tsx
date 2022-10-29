@@ -12,7 +12,7 @@ import {
 import { clear, draw, printDeviceTree, sayHello } from './api';
 import { Bookmark, Bookmarks } from './Bookmarks';
 import { MemoryTable } from './MemoryTable';
-import { CoprocRegisters } from './coproc-registers/CoprocRegisters';
+import { CoprocRegisters } from './coproc-registers';
 import { Address } from './Address';
 
 const BOOKMARKS = 'bookmarks';

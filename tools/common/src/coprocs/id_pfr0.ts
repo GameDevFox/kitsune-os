@@ -1,5 +1,5 @@
 import { fromBinary } from "../binary";
-import { a, f } from "../coproc-utils";
+import { a, f } from "../field-utils";
 
 export const id_pfr0 = {
   args: [15,0,0,1,0],

@@ -6,7 +6,8 @@ import { ImArrowDown, ImArrowUp } from 'react-icons/im';
 
 import {
   Box, Button, ButtonGroup, Center, Heading,
-  Icon, IconButton, Stack, useColorMode,
+  Icon, IconButton, Stack, Tab, TabList,
+  TabPanel, TabPanels, Tabs, useColorMode,
 } from '@chakra-ui/react';
 
 import { clear, draw, printDeviceTree, sayHello } from './api';
@@ -14,6 +15,7 @@ import { Bookmark, Bookmarks } from './Bookmarks';
 import { MemoryTable } from './MemoryTable';
 import { CoprocRegisters } from './coproc-registers';
 import { Address } from './Address';
+import { CPSR } from './CPSR';
 
 const BOOKMARKS = 'bookmarks';
 
@@ -63,7 +65,25 @@ function App() {
           <Button onClick={() => draw('logo')}>Draw Logo</Button>
         </ButtonGroup>
 
-        <CoprocRegisters/>
+        <Tabs>
+          <TabList>
+            <Tab>Coproc Registers</Tab>
+            <Tab>CPSR</Tab>
+            <Tab>Other</Tab>
+          </TabList>
+
+          <TabPanels>
+            <TabPanel paddingLeft='0' paddingRight='0' paddingBottom='0'>
+              <CoprocRegisters/>
+            </TabPanel>
+            <TabPanel paddingLeft='0' paddingRight='0' paddingBottom='0'>
+              <CPSR/>
+            </TabPanel>
+            <TabPanel>
+              Last One
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
 
         <Stack direction='row'>
           <IconButton

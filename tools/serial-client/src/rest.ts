@@ -145,5 +145,26 @@ export const buildRestApp = (write: (data: Uint8Array) => void,) => {
     res.send({ success: true });
   });
 
+  app.get("/timer", (req, res) => {
+    write(Buffer.from("t"));
+    res.send({ success: true });
+  });
+
+  app.get("/cpsr", (req, res) => {
+    const command = (targetId: number) => {
+      const buffer = Buffer.alloc(2);
+
+      buffer.write('3', 0);  // 0
+      buffer.writeUintLE(targetId, 1, 1); // 1
+
+      return buffer;
+    };
+
+    request({
+      command,
+      fn: data => res.send({ success: true, data }),
+    });
+  });
+
   return app;
 };

@@ -163,9 +163,13 @@ void in_3_seconds() {
 }
 
 void print_cpsr() {
-  size_t mode = get_cpsr();
-  word_to_hex(mode, uart_putc);
-  uart_puts(EOL);
+  char target = uart_getc();
+  uint32_t mode = get_cpsr();
+
+  sp_frame(
+    sp_target(target);
+    sp_putw(mode);
+  );
 }
 
 void performance_test() {

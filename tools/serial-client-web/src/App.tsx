@@ -69,7 +69,6 @@ function App() {
           <TabList>
             <Tab>Coproc Registers</Tab>
             <Tab>CPSR</Tab>
-            <Tab>Other</Tab>
           </TabList>
 
           <TabPanels>
@@ -78,9 +77,6 @@ function App() {
             </TabPanel>
             <TabPanel paddingLeft='0' paddingRight='0' paddingBottom='0'>
               <CPSR/>
-            </TabPanel>
-            <TabPanel>
-              Last One
             </TabPanel>
           </TabPanels>
         </Tabs>

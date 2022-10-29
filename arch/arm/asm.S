@@ -42,6 +42,11 @@ get_cpsr:
 	mrs r0, cpsr
 	bx lr
 
+.globl set_cpsr
+set_cpsr:
+	msr cpsr, r0
+	bx lr
+
 .globl get_mode
 get_mode:
 	mrs r0, cpsr

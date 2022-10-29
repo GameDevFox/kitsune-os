@@ -89,7 +89,7 @@ export const buildRestApp = (write: (data: Uint8Array) => void,) => {
     const command = (targetId: number) => {
       const buffer = Buffer.alloc(2 + argStr.length);
       buffer.write('`', 0);
-      buffer.writeUintLE(targetId, 1, 1);
+      buffer.writeUIntLE(targetId, 1, 1);
       buffer.write(argStr, 2);
       return buffer;
     };
@@ -128,9 +128,9 @@ export const buildRestApp = (write: (data: Uint8Array) => void,) => {
 
       let index = 0;
       buffer.write('~', index);  // 0
-      buffer.writeUintLE(targetId, index += 1, 1); // 1
+      buffer.writeUIntLE(targetId, index += 1, 1); // 1
       buffer.write(argStr, index += 1); // 4
-      buffer.writeUintLE(valueNum, index += argStr.length, 4);
+      buffer.writeUIntLE(valueNum, index += argStr.length, 4);
       return buffer;
     };
 
@@ -150,19 +150,38 @@ export const buildRestApp = (write: (data: Uint8Array) => void,) => {
     res.send({ success: true });
   });
 
-  app.get("/cpsr", (req, res) => {
-    const command = (targetId: number) => {
-      const buffer = Buffer.alloc(2);
+  const CPSRCommand = (value?: number[]) => {
+    return (targetId: number) => {
+      const buffer = Buffer.alloc(value ? 7 : 3);
 
-      buffer.write('3', 0);  // 0
-      buffer.writeUintLE(targetId, 1, 1); // 1
+      buffer.write('3', 0);
+      buffer.writeUInt8(targetId, 1);
+      buffer.writeUInt8(value ? 1 : 0, 2);
+
+      if(value) {
+        buffer[3] = value[0];
+        buffer[4] = value[1];
+        buffer[5] = value[2];
+        buffer[6] = value[3];
+      }
 
       return buffer;
     };
+  };
+
+  app.get("/cpsr", (req, res) => {
+    request({
+      command: CPSRCommand(),
+      fn: data => res.send({ success: true, data }),
+    });
+  });
+
+  app.post("/cpsr", (req, res) => {
+    const { value } = req.body;
 
     request({
-      command,
-      fn: data => res.send({ success: true, data }),
+      command: CPSRCommand(value),
+      fn: data => res.send({ success: true }),
     });
   });
 

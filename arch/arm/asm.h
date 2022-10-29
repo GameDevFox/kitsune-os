@@ -1,5 +1,6 @@
 void enable_cache();
 size_t get_cpsr();
+size_t set_cpsr();
 size_t get_mode();
 size_t get_performance_counter();
 void initial_register_values();

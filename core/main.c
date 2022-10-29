@@ -110,10 +110,7 @@ void generate_mrc(bool is_mrc) {
   char cr_m = getb();
   char opc2 = getb();
 
-  uint32_t value = 0;
-  if(!is_mrc) { // If write
-    value = uart_getw();
-  }
+  uint32_t value = is_mrc ? 0 : uart_getw();
 
   char rt = 0; // Register
   uint32_t flags = is_mrc ? ASM_MRC_FLAG : 0;
@@ -164,12 +161,23 @@ void in_3_seconds() {
 
 void print_cpsr() {
   char target = uart_getc();
-  uint32_t mode = get_cpsr();
+  char writeFlag = uart_getc();
 
-  sp_frame(
-    sp_target(target);
-    sp_putw(mode);
-  );
+  if(writeFlag) {
+    uint32_t value = uart_getw();
+    set_cpsr(value);
+
+    sp_frame(
+      sp_target(target);
+    );
+  } else {
+    uint32_t mode = get_cpsr();
+
+    sp_frame(
+      sp_target(target);
+      sp_putw(mode);
+    );
+  }
 }
 
 void performance_test() {

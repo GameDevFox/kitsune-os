@@ -4,16 +4,30 @@
 #include "system-timer.h"
 #include "uart.h"
 
+extern uint32_t mmio_base;
+
+// TODO: Deduplicate this
+
+// Memory-Mapped I/O output
+static void mmio_write(uint32_t reg, uint32_t data) {
+  write(mmio_base + reg, data);
+}
+
+// Memory-Mapped I/O input
+static uint32_t mmio_read(uint32_t reg) {
+  return read(mmio_base + reg);
+}
+
 uint32_t read_timer() {
-  return read(STIMER_LO_COUNTER);
+  return mmio_read(STIMER_LO_COUNTER);
 }
 
 void write_timer_compare(char timer, uint32_t time) {
-  uint32_t* addr = (uint32_t*)STIMER_COMPARE_0 + timer;
-  write(addr, time);
+  uint32_t addr = STIMER_COMPARE_0 + timer;
+  mmio_write(addr, time);
 }
 
 void clear_timer_compare(char timer) {
-  uint32_t* addr = (uint32_t*)STIMER_CONTROL;
-  write(addr, 1 << timer);
+  uint32_t addr = STIMER_CONTROL;
+  mmio_write(addr, 1 << timer);
 }

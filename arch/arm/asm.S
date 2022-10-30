@@ -32,6 +32,11 @@ perf_test:
 
 	bx lr
 
+.globl get_pmccntr
+get_pmccntr:
+	mrc PMCCNTR(r0)
+	bx lr
+
 .globl get_performance_counter
 get_performance_counter:
 	mrc PMCCNTR(r0)

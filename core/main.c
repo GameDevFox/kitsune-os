@@ -88,9 +88,12 @@ void backspace() {
 }
 
 void print_timer() {
-  uint32_t time = read_timer();
-  word_to_hex(time, uart_putc);
+  uint32_t t = read_timer();
+  uint32_t p = get_pmccntr();
+  word_to_hex(t, uart_putc);
   uart_puts(EOL);
+  word_to_hex(p, uart_putc);
+  uart_puts(EOL EOL);
 }
 
 uint32_t call_instruction(uint32_t instruction, uint32_t arg) {
@@ -241,6 +244,10 @@ void print_performance_counter() {
   uart_puts(EOL);
 }
 
+void set_binary_entry() {
+  binary_entry = uart_getw();
+}
+
 void (*char_handler)(char) = NULL;
 
 void command_handler(char);
@@ -293,6 +300,7 @@ void command_handler(char input) {
 
     case 'q': do_toggle_irq(); break;
     case 'w': write_word(); break;
+    case 'e': set_binary_entry(); break;
     // case 'r': walk_memory((size_t*)binary_entry, uart_putc); break;
     case 't': print_timer(); break;
 

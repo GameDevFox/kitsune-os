@@ -169,20 +169,35 @@ export const buildRestApp = (write: (data: Uint8Array) => void,) => {
     };
   };
 
-  app.get("/cpsr", (req, res) => {
+  app.get('/cpsr', (req, res) => {
     request({
       command: CPSRCommand(),
       fn: data => res.send({ success: true, data }),
     });
   });
 
-  app.post("/cpsr", (req, res) => {
+  app.post('/cpsr', (req, res) => {
     const { value } = req.body;
 
     request({
       command: CPSRCommand(value),
       fn: data => res.send({ success: true }),
     });
+  });
+
+  app.post('/color', (req, res) => {
+    const { color } = req.body;
+
+    const buffer = Buffer.alloc(5);
+    buffer.write('e', 0);
+    buffer[1] = color.b;
+    buffer[2] = color.g;
+    buffer[3] = color.r;
+    buffer[4] = 0xff;
+
+    write(buffer);
+
+    res.send({ success: true })
   });
 
   return app;

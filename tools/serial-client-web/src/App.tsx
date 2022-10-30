@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { useState } from 'react';
+import { RGBColor } from 'react-color';
 
 import { BsBookmark } from 'react-icons/bs';
 import { ImArrowDown, ImArrowUp } from 'react-icons/im';
@@ -10,12 +11,13 @@ import {
   TabPanel, TabPanels, Tabs, useColorMode,
 } from '@chakra-ui/react';
 
-import { clear, draw, printDeviceTree, sayHello } from './api';
-import { Bookmark, Bookmarks } from './Bookmarks';
-import { MemoryTable } from './MemoryTable';
-import { CoprocRegisters } from './coproc-registers';
+import { clear, draw, getTimer, printDeviceTree, sayHello, setColor as apiSetColor } from './api';
 import { Address } from './Address';
+import { Bookmark, Bookmarks } from './Bookmarks';
+import { ColorPicker } from './ColorPicker';
+import { CoprocRegisters } from './coproc-registers';
 import { CPSR } from './CPSR';
+import { MemoryTable } from './MemoryTable';
 
 const BOOKMARKS = 'bookmarks';
 
@@ -23,6 +25,8 @@ const loadBookmarks = () => JSON.parse(localStorage.getItem(BOOKMARKS) || 'null'
 
 function App() {
   const { colorMode, toggleColorMode } = useColorMode();
+
+  const [color, setColor] = useState<RGBColor>({ r: 0xff, g: 0x55, b: 0x00 });
 
   const [address, setAddress] = useState<number>(0x8000);
   const [offset, setOffset] = useState<number>(0);
@@ -50,6 +54,11 @@ function App() {
     updateBookmarks(newBookmarks);
   };
 
+  const updateColor = (color: RGBColor) => {
+    setColor(color);
+    apiSetColor(color);
+  };
+
   return (
     <Center>
       <Stack>
@@ -58,11 +67,18 @@ function App() {
             {_.capitalize(colorMode)}
           </Button>
           <Button onClick={sayHello}>Hello!</Button>
-          <Button onClick={clear}>Clear</Button>
           <Button onClick={printDeviceTree}>Print Device Tree</Button>
+          <Button onClick={getTimer}>Get Timer</Button>
+        </ButtonGroup>
+
+        <ButtonGroup>
+          <ColorPicker color={color} onChange={color => updateColor(color)}/>
+
           <Button onClick={() => draw('curve')}>Draw Curve</Button>
           <Button onClick={() => draw('mascot')}>Draw Mascot</Button>
           <Button onClick={() => draw('logo')}>Draw Logo</Button>
+
+          <Button onClick={clear}>Clear</Button>
         </ButtonGroup>
 
         <Tabs>

@@ -43,7 +43,7 @@ qemu: $(QEMU_KERNEL)
 	$(QEMU_ARM) $(QEMU_OPTS) -serial $(shell tty)
 
 qemu-gdb: $(QEMU_KERNEL)
-	$(QEMU_ARM) -S -s $(QEMU_OPTS) -serial $(shell tty)
+	$(QEMU_ARM) -S -s $(QEMU_OPTS) -serial tcp:localhost:8081
 
 qemu-tcp: $(QEMU_KERNEL)
 	$(QEMU_ARM) $(QEMU_OPTS) -serial tcp:localhost:8081

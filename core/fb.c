@@ -1,12 +1,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "../arch/arm/asm.h"
+
+#include "convert.h"
 #include "fb.h"
 #include "output.h"
+#include "system-timer.h"
 #include "uart.h"
 
 extern size_t binary_entry;
-extern uint32_t fb_base;
+extern void* fb_base;
 
 static void fb_write(uint32_t reg, uint32_t data) {
   *(volatile uint32_t*)(fb_base + reg) = data;
@@ -62,12 +66,22 @@ void draw_image(uint32_t* image_data, uint32_t x_pos, uint32_t y_pos) {
 
   for(uint32_t y = 0; y < height; y++) {
     for(uint32_t x = 0; x < width; x++) {
+      uint32_t* image_data_start = image_data;
       uint32_t color = *image_data++;
 
       if(color >> 24 != 0xff)
         continue;
 
-      fb_write(get_pixel_offset(x_pos + x, y_pos + y) * 4, color);
+      uint32_t length = 0;
+      do {
+        length++;
+        color = *image_data++;
+      } while(color >> 24 == 0xff);
+
+      uint32_t pixelOffset = get_pixel_offset(x_pos + x, y_pos + y) * 4;
+      copy_bytes(image_data_start, fb_base + pixelOffset, length * 4);
+
+      x += length;
     }
   }
 }
@@ -109,9 +123,7 @@ void draw_logo() {
 void fb_clear() {
   uart_puts("Clearing frame buffer...");
 
-  for(int i = 0; i < (FB_WIDTH * FB_HEIGHT); i++) {
-    fb_write(i * 4, 0xff000000);
-  }
+  clear_bytes(fb_base, FB_WIDTH * FB_HEIGHT * 4);
 
-  uart_puts(" Done!\r\n");
+  uart_puts(" Done!" EOL);
 }

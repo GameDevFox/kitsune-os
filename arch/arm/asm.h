@@ -10,3 +10,7 @@ uint32_t get_pmccntr();
 void enable_cache();
 void initial_register_values();
 void set_mode(size_t mode);
+
+void test_bytes(uint32_t start, uint32_t end);
+void clear_bytes(void* start, uint32_t length);
+void copy_bytes(void* from, void* to, uint32_t length);

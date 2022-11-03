@@ -3,6 +3,187 @@
 
 .section ".text"
 
+.global test_bytes
+test_bytes:
+	// r0 start (inclusive)
+	// r1 end (exclusive)
+
+	mov r2, #0xffffffff
+1:
+	add r2, #1
+	strb r2, [r0, #0]
+	add r0, #1
+
+	cmp r0, r1
+	blo 1b
+
+	bx lr
+
+// 10 words * 4 bytes per word
+#define COPY_SIZE 40
+
+// TODO: Optimize and/or clean up this nonsense
+.globl copy_bytes
+copy_bytes:
+	push {r0-r12, lr}
+
+	// r0 - source
+	// r1 - dest
+	// r2 - length
+
+	// r3 - next (from source)
+
+	// set "next"
+
+	mov r4, #COPY_SIZE
+	udiv r3, r2, r4
+	mul r3, r4
+
+	add r2, r0 // length -> end
+
+	// If "next" is 0, jump to PHASE 2
+	cmp r3, #0
+	beq 2f
+
+	//// PHASE 1 - FASTER (multiple words)
+
+	add r3, r0
+
+1:
+	// load and store multiple
+	ldmia r0!, {r4-r12, lr}
+	stmia r1!, {r4-r12, lr}
+	cmp r0, r3
+	blo 1b
+
+2:
+	//// PHASE 2 - SLOWER (single words)
+
+	mov r4, #4 // bytes in a word
+	sub r3, r2, r0
+	udiv r3, r3, r4
+	mul r3, r4
+
+	// If "next" is 0, jump to PHASE 3
+	cmp r2, #0
+	beq 4f
+
+	// Update "next"
+	add r3, r0
+
+3:
+	// load and store word
+	ldr r4, [r0]
+	add r0, #4
+
+	str r4, [r1]
+	add r1, #4
+
+	cmp r0, r3
+	blo 3b
+
+4:
+	// PHASE 3 - SLOWEST (single bytes)
+
+	// load and store byte
+	ldrb r4, [r0]
+	add r0, #1
+
+	strb r4, [r1]
+	add r1, #1
+
+	cmp r0, r2
+	blo 4b
+
+	pop {r0-r12, lr}
+
+	bx lr
+
+// 11 words * 4 bytes per word
+#define CLEAR_SIZE 44
+
+// TODO: Optimize and/or clean up this nonsense
+.globl clear_bytes
+clear_bytes:
+	push {r0-r12, lr}
+
+	// r0 - start
+	// r1 - length / end
+
+	// r2 - next
+
+	// set "next"
+	mov r3, #CLEAR_SIZE
+	udiv r2, r1, r3
+	mul r2, r3
+
+	add r1, r0 // length -> end
+
+	// If "next" is 0, jump to PHASE 2
+	cmp r2, #0
+	beq 2f
+
+	//// PHASE 1 - FASTER (multiple words)
+
+	add r2, r0
+
+	// setup 11 registers
+	mov r3,  #0x00000000
+	mov r4,  #0x00000000
+	mov r5,  #0x00000000
+	mov r6,  #0x00000000
+
+	mov r7,  #0x00000000
+	mov r8,  #0x00000000
+	mov r9,  #0x00000000
+	mov r10, #0x00000000
+
+	mov r11, #0x00000000
+	mov r12, #0x00000000
+	mov  lr, #0x00000000 // r14
+
+1:
+	// store multiple
+	stmia r0!, {r3-r12, lr}
+	cmp r0, r2
+	blo 1b
+
+2:
+	//// PHASE 2 - SLOWER (single words)
+
+	mov r3, #4 // bytes in a word
+	sub r2, r1, r0
+	udiv r2, r2, r3
+	mul r2, r3
+
+	mov r3,  #0x00000000
+
+	// If "next" is 0, jump to PHASE 3
+	cmp r2, #0
+	beq 4f
+
+	// Update "next"
+	add r2, r0
+
+3:
+	// store word
+	str r3, [r0]
+	add r0, #4
+	cmp r0, r2
+	blo 3b
+
+4:
+	// PHASE 3 - SLOWEST (single bytes)
+
+	// store byte
+	strb r3, [r0]
+	add r0, #1
+	cmp r0, r1
+	blo 4b
+
+	pop {r0-r12, lr}
+	bx lr
+
 .globl perf_test
 perf_test:
 	push {r0-r7}
@@ -109,9 +290,19 @@ switch_hyp_to_svc:
 .globl live_fn
 live_fn:
 	push {r1-r12}
+
+	// Figure out which of these are actually nessisary
+	dmb
+	dsb
+	isb
 .globl live_instruction
 live_instruction:
 	.word 0xee100f10
+
+	dmb
+	dsb
+	isb
+
 	pop {r1-r12}
 	bx lr
 

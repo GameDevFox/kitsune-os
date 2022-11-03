@@ -44,6 +44,9 @@ export const buildRestApp = (write: (data: Uint8Array) => void,) => {
       case 'mascot':
         write(Buffer.from("8"));
         break;
+      case 'mascot-no-glasses':
+        write(Buffer.from("8g"));
+        break;
       case 'logo':
         write(Buffer.from("9"));
         break;

@@ -308,6 +308,7 @@ void command_handler(char input) {
     case 's': do_enable_cache(); break;
     case 'd': process_device_tree(device_tree); break;
     // case 'f': print_vt_size(); break;
+    case 'g': draw_no_glasses(); break;
     case 'h': print_performance_counter(); break;
     case 'j': set_input_handler(raw_handler); break;
     // case 'k': vt_fill('X'); break;
@@ -423,6 +424,7 @@ void main(uint32_t r0, uint32_t r1, uint32_t atags)
   fb_test_2();
   draw_logo();
   // draw_mascot();
+  // draw_no_glasses();
 
   uart_puts(EOL "READY" EOL);
 

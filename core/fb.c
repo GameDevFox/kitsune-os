@@ -76,7 +76,7 @@ void draw_image(uint32_t* image_data, uint32_t x_pos, uint32_t y_pos) {
       do {
         length++;
         color = *image_data++;
-      } while(color >> 24 == 0xff);
+      } while(color >> 24 == 0xff && x + length + 1 < width);
 
       uint32_t pixelOffset = get_pixel_offset(x_pos + x, y_pos + y) * 4;
       copy_bytes(image_data_start, fb_base + pixelOffset, length * 4);
@@ -96,6 +96,19 @@ void draw_mascot() {
   draw_image(
     (uint32_t*) &_binary_mascot_data_start,
     510, 280 // x, y
+  );
+
+  uart_puts(" Done!\r\n");
+}
+
+extern const uint32_t _binary_no_glasses_data_start;
+
+void draw_no_glasses() {
+  uart_puts("Drawing no glasses...");
+
+  draw_image(
+    (uint32_t*) &_binary_no_glasses_data_start,
+    510 + 169, 280 + 200 // x, y
   );
 
   uart_puts(" Done!\r\n");

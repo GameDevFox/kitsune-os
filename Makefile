@@ -2,6 +2,7 @@ include vars.mk
 
 BOOT_OBJS = $(subst .S,.o,$(wildcard ./arch/$(ARCH)/*.S))
 CORE_OBJS = $(subst .c,.o,$(wildcard ./core/*.c))
+IMAGE_OBJS = image/logo.o image/mascot.o image/no-glasses.o
 
 ### TARGETS ###
 all: $(ELF_KERNEL) $(QEMU_KERNEL) $(BINARY_KERNEL)
@@ -12,11 +13,11 @@ clean:
 	rm -rf $(ELF_KERNEL) $(QEMU_KERNEL) $(BINARY_KERNEL)
 .PHONY: clean
 
-$(ELF_KERNEL): $(LINKER_FILE) $(BOOT_OBJS) $(CORE_OBJS) image/logo.o image/mascot.o config/raspberry-pi-4b.o ./dts/device-tree.o
-	$(CC) $(CFLAGS) -Xlinker $(LDFLAGS) -T $(LINKER_FILE) -o $(ELF_KERNEL) $(BOOT_OBJS) $(CORE_OBJS) image/logo.o image/mascot.o config/raspberry-pi-4b.o ./dts/device-tree.o
+$(ELF_KERNEL): $(LINKER_FILE) $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS) config/raspberry-pi-4b.o ./dts/device-tree.o
+	$(CC) $(CFLAGS) -Xlinker $(LDFLAGS) -T $(LINKER_FILE) -o $(ELF_KERNEL) $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS) config/raspberry-pi-4b.o ./dts/device-tree.o
 
-$(QEMU_KERNEL): $(LINKER_FILE) $(BOOT_OBJS) $(CORE_OBJS) image/logo.o image/mascot.o config/qemu-raspberry-pi-2b.o ./dts/device-tree.o
-	$(CC) $(CFLAGS) -Xlinker $(LDFLAGS) -T $(LINKER_FILE) -o $(QEMU_KERNEL) $(BOOT_OBJS) $(CORE_OBJS) image/logo.o image/mascot.o config/qemu-raspberry-pi-2b.o ./dts/device-tree.o
+$(QEMU_KERNEL): $(LINKER_FILE) $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS) config/qemu-raspberry-pi-2b.o ./dts/device-tree.o
+	$(CC) $(CFLAGS) -Xlinker $(LDFLAGS) -T $(LINKER_FILE) -o $(QEMU_KERNEL) $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS) config/qemu-raspberry-pi-2b.o ./dts/device-tree.o
 
 $(BINARY_KERNEL): $(ELF_KERNEL)
 	$(PREFIX)objcopy $(ELF_KERNEL) -O binary $(BINARY_KERNEL)

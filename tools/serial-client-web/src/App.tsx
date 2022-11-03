@@ -76,6 +76,7 @@ function App() {
 
           <Button onClick={() => draw('curve')}>Draw Curve</Button>
           <Button onClick={() => draw('mascot')}>Draw Mascot</Button>
+          <Button onClick={() => draw('mascot-no-glasses')}>Draw Mascot (no glasses)</Button>
           <Button onClick={() => draw('logo')}>Draw Logo</Button>
 
           <Button onClick={clear}>Clear</Button>

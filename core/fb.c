@@ -12,6 +12,14 @@
 extern size_t binary_entry;
 extern void* fb_base;
 
+void fb_clear() {
+  uart_puts("Clearing frame buffer...");
+
+  clear_bytes(fb_base, FB_WIDTH * FB_HEIGHT * 4);
+
+  uart_puts(" Done!" EOL);
+}
+
 static void fb_write(uint32_t reg, uint32_t data) {
   *(volatile uint32_t*)(fb_base + reg) = data;
 }
@@ -60,12 +68,24 @@ void fb_test_2() {
   uart_puts(" Done!\r\n");
 }
 
-void draw_image(uint32_t* image_data, uint32_t x_pos, uint32_t y_pos) {
-  uint32_t width = *image_data++;
-  uint32_t height = *image_data++;
+void draw_image_base(
+  uint32_t* image_data,
+  uint32_t src_x, uint32_t src_y,
+  uint32_t src_width, uint32_t src_height,
+  uint32_t dest_x, uint32_t dest_y,
+  uint32_t dest_width, uint32_t dest_height
+) {
+  if(dest_width == 0)
+    dest_width = src_width;
+  if(dest_height == 0)
+    dest_height = src_height;
 
-  for(uint32_t y = 0; y < height; y++) {
-    for(uint32_t x = 0; x < width; x++) {
+  image_data += src_y * src_width;
+
+  for(uint32_t y = src_y; y < src_height && y < src_y + dest_height; y++) {
+    image_data += src_x;
+
+    for(uint32_t x = src_x; x < src_width && x < src_x + dest_width; x++) {
       uint32_t* image_data_start = image_data;
       uint32_t color = *image_data++;
 
@@ -76,14 +96,27 @@ void draw_image(uint32_t* image_data, uint32_t x_pos, uint32_t y_pos) {
       do {
         length++;
         color = *image_data++;
-      } while(color >> 24 == 0xff && x + length + 1 < width);
+      } while(color >> 24 == 0xff && x + length + 1 < src_width);
 
-      uint32_t pixelOffset = get_pixel_offset(x_pos + x, y_pos + y) * 4;
+      uint32_t pixelOffset = get_pixel_offset(dest_x - src_x + x, dest_y - src_y + y) * 4;
       copy_bytes(image_data_start, fb_base + pixelOffset, length * 4);
 
       x += length;
     }
+
+    image_data += src_width - (src_x + dest_width);
   }
+}
+
+void draw_image(uint32_t* image_data, uint32_t dest_x, uint32_t dest_y) {
+  uint32_t src_width = *image_data++;
+  uint32_t src_height = *image_data++;
+
+  draw_image_base(
+    image_data,
+    0, 0, src_width, src_height,
+    dest_x, dest_y, 0, 0
+  );
 }
 
 extern const uint32_t _binary_mascot_data_start;
@@ -133,10 +166,37 @@ void draw_logo() {
   uart_puts(" Done!\r\n");
 }
 
-void fb_clear() {
-  uart_puts("Clearing frame buffer...");
+#define BINARY_CHAR_SHEET _binary_character_sheet_base_data_start
+#define BINARY_CHAR_SHEET_CHAR_WIDTH 32
 
-  clear_bytes(fb_base, FB_WIDTH * FB_HEIGHT * 4);
+extern const uint32_t BINARY_CHAR_SHEET;
+
+void draw_char(char c, uint32_t x, uint32_t y) {
+  uint32_t* image_data = (uint32_t*) &BINARY_CHAR_SHEET;
+
+  uint32_t src_width = *image_data++;
+  uint32_t src_height = *image_data++;
+
+  uint32_t src_x = (c % 16) * (src_width / 16);
+  uint32_t src_y = (c / 16) * (src_height / 8);
+
+  uint32_t desc_width = src_width / 16;
+  uint32_t desc_height = src_height / 8;
+
+  draw_image_base(
+    image_data,
+    src_x, src_y, src_width, src_height,
+    x, y, desc_width, desc_height
+  );
+}
+
+void draw_string(char* str, uint32_t x, uint32_t y) {
+  uart_puts("Drawing string \"");
+  uart_puts(str);
+  uart_puts("\" ...");
+
+  for(int i=0; str[i] != 0; i++)
+    draw_char(str[i], x + (i * BINARY_CHAR_SHEET_CHAR_WIDTH), y);
 
   uart_puts(" Done!" EOL);
 }

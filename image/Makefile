@@ -1,4 +1,4 @@
-include ../vars.mk
+include ../Makefile
 
 %.o: %.png
 	./image-size-gen $*.png

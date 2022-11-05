@@ -423,8 +423,13 @@ void main(uint32_t r0, uint32_t r1, uint32_t atags)
 
   fb_test_2();
   draw_logo();
+
   // draw_mascot();
   // draw_no_glasses();
+
+  uint32_t str_width = 32 * 7; // 32 pixels per char
+  uint32_t str_x =  (FB_WIDTH / 2)  - (str_width / 2);
+  draw_string("KITSUNE", str_x, 690);
 
   uart_puts(EOL "READY" EOL);
 

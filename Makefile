@@ -1,8 +1,35 @@
-include vars.mk
+ARCH = arm
+PREFIX = arm-none-eabi-
+
+OPTIONAL_CFLAGS = -g -Og -Wall -Wextra
+CFLAGS = -fpic -ffreestanding -mcpu=cortex-a7 -nostdlib -lgcc $(OPTIONAL_CFLAGS)
+ASFLAGS = $(CFLAGS)
+
+LDFLAGS = --nmagic
+
+CC = $(PREFIX)gcc
+LD = $(PREFIX)ld $(LDFLAGS)
+
+LINKER_FILE = linker.ld
+
+NAME = kitsune
+
+ELF_KERNEL = $(NAME).elf
+QEMU_KERNEL = $(NAME)-qemu.elf
+BINARY_KERNEL = $(NAME).img
+
+COMMON_CC_ARGS = $(CFLAGS) -Xlinker $(LDFLAGS)
 
 BOOT_OBJS = $(subst .S,.o,$(wildcard ./arch/$(ARCH)/*.S))
 CORE_OBJS = $(subst .c,.o,$(wildcard ./core/*.c))
-IMAGE_OBJS = image/logo.o image/mascot.o image/no-glasses.o
+
+CHARACTER_SHEET_OBJS = \
+	image/character-sheet-base.o \
+	image/character-sheet-micro.o \
+	image/character-sheet-nano.o
+IMAGE_OBJS = $(CHARACTER_SHEET_OBJS) image/logo.o image/mascot.o image/no-glasses.o
+
+COMMON_OBJS = $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS)
 
 ### TARGETS ###
 all: $(ELF_KERNEL) $(QEMU_KERNEL) $(BINARY_KERNEL)
@@ -13,11 +40,11 @@ clean:
 	rm -rf $(ELF_KERNEL) $(QEMU_KERNEL) $(BINARY_KERNEL)
 .PHONY: clean
 
-$(ELF_KERNEL): $(LINKER_FILE) $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS) config/raspberry-pi-4b.o ./dts/device-tree.o
-	$(CC) $(CFLAGS) -Xlinker $(LDFLAGS) -T $(LINKER_FILE) -o $(ELF_KERNEL) $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS) config/raspberry-pi-4b.o ./dts/device-tree.o
+$(ELF_KERNEL): $(LINKER_FILE) $(COMMON_OBJS) config/raspberry-pi-4b.o ./dts/device-tree.o
+	$(CC) $(COMMON_CC_ARGS) -T $(LINKER_FILE) -o $(ELF_KERNEL) $(COMMON_OBJS) config/raspberry-pi-4b.o ./dts/device-tree.o
 
-$(QEMU_KERNEL): $(LINKER_FILE) $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS) config/qemu-raspberry-pi-2b.o ./dts/device-tree.o
-	$(CC) $(CFLAGS) -Xlinker $(LDFLAGS) -T $(LINKER_FILE) -o $(QEMU_KERNEL) $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS) config/qemu-raspberry-pi-2b.o ./dts/device-tree.o
+$(QEMU_KERNEL): $(LINKER_FILE) $(COMMON_OBJS) config/qemu-raspberry-pi-2b.o ./dts/device-tree.o
+	$(CC) $(COMMON_CC_ARGS) -T $(LINKER_FILE) -o $(QEMU_KERNEL) $(COMMON_OBJS) config/qemu-raspberry-pi-2b.o ./dts/device-tree.o
 
 $(BINARY_KERNEL): $(ELF_KERNEL)
 	$(PREFIX)objcopy $(ELF_KERNEL) -O binary $(BINARY_KERNEL)

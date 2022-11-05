@@ -68,6 +68,7 @@ void fb_test_2() {
   uart_puts(" Done!\r\n");
 }
 
+// TODO: Look over this again and see if we can simplify the math
 void draw_image_base(
   uint32_t* image_data,
   uint32_t src_x, uint32_t src_y,
@@ -87,16 +88,19 @@ void draw_image_base(
 
     for(uint32_t x = src_x; x < src_width && x < src_x + dest_width; x++) {
       uint32_t* image_data_start = image_data;
-      uint32_t color = *image_data++;
 
+      uint32_t color = *image_data++;
       if(color >> 24 != 0xff)
         continue;
 
-      uint32_t length = 0;
-      do {
-        length++;
+      uint32_t length = 1;
+      while((x - src_x) + length < dest_width) {
         color = *image_data++;
-      } while(color >> 24 == 0xff && x + length + 1 < src_width);
+        if(color >> 24 != 0xff)
+          break;
+
+        length++;
+      }
 
       uint32_t pixelOffset = get_pixel_offset(dest_x - src_x + x, dest_y - src_y + y) * 4;
       copy_bytes(image_data_start, fb_base + pixelOffset, length * 4);

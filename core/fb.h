@@ -11,3 +11,4 @@ void draw_logo();
 
 void draw_char(char c, uint32_t x, uint32_t y);
 void draw_string(char* str, uint32_t x, uint32_t y);
+void draw_string_animated(char* str, uint32_t x, uint32_t y, uint32_t delay_count);

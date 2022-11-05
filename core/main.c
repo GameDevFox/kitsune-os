@@ -244,6 +244,12 @@ void print_performance_counter() {
   uart_puts(EOL);
 }
 
+void draw_kitsune_text() {
+  uint32_t str_width = 32 * 7; // 32 pixels per char
+  uint32_t str_x =  (FB_WIDTH / 2)  - (str_width / 2);
+  draw_string_animated("KITSUNE", str_x, 690, 0);
+}
+
 void set_binary_entry() {
   binary_entry = uart_getw();
 }
@@ -301,7 +307,7 @@ void command_handler(char input) {
     case 'q': do_toggle_irq(); break;
     case 'w': write_word(); break;
     case 'e': set_binary_entry(); break;
-    // case 'r': walk_memory((size_t*)binary_entry, uart_putc); break;
+    case 'r': draw_kitsune_text(); break;
     case 't': print_timer(); break;
 
     case 'a': uart_puts(VT_SAVE VT_HOME VT_RED "Red Text" EOL VT_DEFAULT VT_LOAD); break;
@@ -427,9 +433,9 @@ void main(uint32_t r0, uint32_t r1, uint32_t atags)
   // draw_mascot();
   // draw_no_glasses();
 
-  uint32_t str_width = 32 * 7; // 32 pixels per char
-  uint32_t str_x =  (FB_WIDTH / 2)  - (str_width / 2);
-  draw_string("KITSUNE", str_x, 690);
+  delay(1000000);
+
+  draw_kitsune_text();
 
   uart_puts(EOL "READY" EOL);
 

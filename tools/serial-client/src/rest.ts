@@ -50,6 +50,9 @@ export const buildRestApp = (write: (data: Uint8Array) => void,) => {
       case 'logo':
         write(Buffer.from("9"));
         break;
+      case 'kitsune-text':
+        write(Buffer.from("r"));
+        break;
       default:
         console.error(`No such object to draw: ${name}`);
     }

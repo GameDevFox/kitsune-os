@@ -124,7 +124,7 @@ extern const uint32_t _binary_mascot_data_end;
 extern const uint32_t _binary_mascot_data_size;
 
 void draw_mascot() {
-  uart_puts("Drawing mascot...");
+  uart_puts("Drawing mascot w/ glasses...");
 
   draw_image(
     (uint32_t*) &_binary_mascot_data_start,
@@ -137,7 +137,7 @@ void draw_mascot() {
 extern const uint32_t _binary_no_glasses_data_start;
 
 void draw_no_glasses() {
-  uart_puts("Drawing no glasses...");
+  uart_puts("Drawing mascot...");
 
   draw_image(
     (uint32_t*) &_binary_no_glasses_data_start,
@@ -197,6 +197,22 @@ void draw_string(char* str, uint32_t x, uint32_t y) {
 
   for(int i=0; str[i] != 0; i++)
     draw_char(str[i], x + (i * BINARY_CHAR_SHEET_CHAR_WIDTH), y);
+
+  uart_puts(" Done!" EOL);
+}
+
+void draw_string_animated(char* str, uint32_t x, uint32_t y, uint32_t delay_count) {
+  if(delay_count == 0)
+    delay_count = 100000;
+
+  uart_puts("Drawing animated string \"");
+  uart_puts(str);
+  uart_puts("\" ...");
+
+  for(int i=0; str[i] != 0; i++) {
+    draw_char(str[i], x + (i * BINARY_CHAR_SHEET_CHAR_WIDTH), y);
+    delay(delay_count);
+  }
 
   uart_puts(" Done!" EOL);
 }

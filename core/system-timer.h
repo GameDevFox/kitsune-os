@@ -2,6 +2,7 @@
 
 uint32_t read_timer();
 void write_timer_compare(char timer, uint32_t time);
+void delay(uint32_t count);
 
 enum {
   SYSTEM_TIMER_BASE = 0x3000,

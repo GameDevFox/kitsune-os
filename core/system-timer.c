@@ -31,3 +31,12 @@ void clear_timer_compare(char timer) {
   uint32_t addr = STIMER_CONTROL;
   mmio_write(addr, 1 << timer);
 }
+
+void delay(uint32_t count) {
+  uint32_t time = read_timer();
+  uint32_t stop = time + count;
+
+  while(time < stop) {
+    time = read_timer();
+  }
+}

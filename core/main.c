@@ -155,10 +155,12 @@ void init_irq() {
   uart_puts("Done" EOL);
 }
 
+#define ONE_SECOND 1000000
+
 void in_3_seconds() {
   uart_puts("Set time 3 seconds from now" EOL);
   uint32_t t = read_timer();
-  write_timer_compare(1, t + (3 * 1000000));
+  write_timer_compare(1, t + (3 * ONE_SECOND));
   uart_puts("Done" EOL);
 }
 
@@ -244,10 +246,96 @@ void print_performance_counter() {
   uart_puts(EOL);
 }
 
+extern const uint32_t _binary_character_sheet_base_data_start[];
+extern const uint32_t _binary_character_sheet_micro_data_start[];
+
+#define base_font _binary_character_sheet_base_data_start
+#define micro_font _binary_character_sheet_micro_data_start
+
 void draw_kitsune_text() {
   uint32_t str_width = 32 * 7; // 32 pixels per char
   uint32_t str_x =  (FB_WIDTH / 2)  - (str_width / 2);
-  draw_string_animated("KITSUNE", str_x, 690, 0);
+  draw_string_animated("KITSUNE", base_font, str_x, 690, 0);
+}
+
+void draw_mascot_text() {
+  char* long_str =
+    "Welcome back, User!\n"
+    "Are you ready to learn today?\n"
+    "*smile*";
+  draw_string_animated(long_str, micro_font, 400, 220, 20000);
+}
+
+char uptime_str[16];
+uint32_t uptime_str_index = 0;
+
+void set_uptime_str(unsigned char c) {
+  uptime_str[uptime_str_index++] = c;
+}
+
+void draw_clock(uint32_t seconds, uint32_t minutes, uint32_t hours) {
+  uint32_t char_width = base_font[0] / 16;
+  uint32_t char_height = base_font[1] / 8;
+
+  uint32_t x = FB_WIDTH - (10 * char_width) - 4; // 8 chars, 4 px padding
+
+  // Clear old clock
+  clear_pixels(x, 0, FB_WIDTH - x, char_height);
+
+  // draw hours
+  uptime_str_index = 0;
+  word_to_dec(hours, set_uptime_str);
+  uptime_str[uptime_str_index++] = ':';
+  uptime_str[uptime_str_index++] = 0;
+
+  draw_string(uptime_str+6, base_font, x + (char_width * 0), 0);
+
+  // draw minutes
+  uptime_str_index = 0;
+  word_to_dec(minutes, set_uptime_str);
+  uptime_str[uptime_str_index++] = ':';
+  uptime_str[uptime_str_index++] = 0;
+
+  draw_string(uptime_str+8, base_font, x + (char_width * 5), 0);
+
+  // draw seconds
+  uptime_str_index = 0;
+  word_to_dec(seconds, set_uptime_str);
+  uptime_str[uptime_str_index++] = 0;
+
+  draw_string(uptime_str+8, base_font, x + (char_width * 8), 0);
+}
+
+void draw_uptime_clock() {
+  static uint32_t last_tick = 0;
+  static uint32_t second_counter = 0;
+  static uint32_t accumulator = 0;
+
+  uint32_t latest_tick = read_timer();
+
+  uint32_t diff;
+  if(latest_tick == last_tick) {
+    return;
+  } else if(latest_tick > last_tick)
+    diff = (latest_tick - last_tick); // No Wrap
+  else
+    diff = (0xffffffff - last_tick) + latest_tick; // Timer wrapped around
+  last_tick = latest_tick;
+
+  accumulator += diff;
+  if(accumulator < ONE_SECOND)
+    return;
+
+  // Update second_counter
+  second_counter += (accumulator / ONE_SECOND);
+  accumulator %= ONE_SECOND;
+
+  uint32_t seconds = second_counter;
+  uint32_t minutes = seconds / 60 % 60;
+  uint32_t hours = seconds / 3600;
+  seconds %= 60;
+
+  draw_clock(seconds, minutes, hours);
 }
 
 void set_binary_entry() {
@@ -307,7 +395,7 @@ void command_handler(char input) {
     case 'q': do_toggle_irq(); break;
     case 'w': write_word(); break;
     case 'e': set_binary_entry(); break;
-    case 'r': draw_kitsune_text(); break;
+    case 'r': draw_kitsune_text(); draw_mascot_text(); break;
     case 't': print_timer(); break;
 
     case 'a': uart_puts(VT_SAVE VT_HOME VT_RED "Red Text" EOL VT_DEFAULT VT_LOAD); break;
@@ -375,6 +463,7 @@ void process_input() {
 void input_loop() {
   while(run_loop) {
     // List "processes" here
+    draw_uptime_clock();
     process_input();
   }
 }
@@ -436,6 +525,9 @@ void main(uint32_t r0, uint32_t r1, uint32_t atags)
   delay(1000000);
 
   draw_kitsune_text();
+  // draw_mascot_text();
+
+  draw_clock(0, 0, 0);
 
   uart_puts(EOL "READY" EOL);
 

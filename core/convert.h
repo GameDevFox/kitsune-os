@@ -4,6 +4,7 @@
 void byte_to_hex(unsigned char b, void (*out)(unsigned char));
 char char_as_hex(char input);
 void word_to_hex(size_t word, void (*out)(unsigned char));
+void word_to_dec(uint32_t word, void (*out)(unsigned char));
 
 uint32_t swap_bytes(uint32_t value);
 

@@ -34,6 +34,20 @@ void word_to_hex(size_t word, void (*out)(unsigned char)) {
   byte_to_hex(word >> 0 & 0xff, out);
 }
 
+#define DIGIT_COUNT 10
+
+void word_to_dec(uint32_t word, void (*out)(unsigned char)) {
+  uint32_t digits[DIGIT_COUNT];
+
+  for(int i=0; i < DIGIT_COUNT; i++) {
+    digits[i] = (word % 10);
+    word /= 10;
+  }
+
+  for(int i = DIGIT_COUNT - 1; i >= 0; i--)
+    out(hex_table[digits[i]]);
+}
+
 uint32_t swap_bytes(uint32_t value) {
   uint32_t result = 0;
 

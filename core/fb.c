@@ -68,9 +68,20 @@ void fb_test_2() {
   uart_puts(" Done!\r\n");
 }
 
+void clear_pixels(
+  uint32_t x, uint32_t y,
+  uint32_t width, uint32_t height
+) {
+  while(y < height) {
+    uint32_t pixelOffset = get_pixel_offset(x, y) * 4;
+    clear_bytes(fb_base + pixelOffset, width * 4);
+    y++;
+  }
+}
+
 // TODO: Look over this again and see if we can simplify the math
 void draw_image_base(
-  uint32_t* image_data,
+  const uint32_t* image_data,
   uint32_t src_x, uint32_t src_y,
   uint32_t src_width, uint32_t src_height,
   uint32_t dest_x, uint32_t dest_y,
@@ -87,7 +98,7 @@ void draw_image_base(
     image_data += src_x;
 
     for(uint32_t x = src_x; x < src_width && x < src_x + dest_width; x++) {
-      uint32_t* image_data_start = image_data;
+      const uint32_t* image_data_start = image_data;
 
       uint32_t color = *image_data++;
       if(color >> 24 != 0xff)
@@ -124,11 +135,9 @@ void draw_image(uint32_t* image_data, uint32_t dest_x, uint32_t dest_y) {
 }
 
 extern const uint32_t _binary_mascot_data_start;
-extern const uint32_t _binary_mascot_data_end;
-extern const uint32_t _binary_mascot_data_size;
 
 void draw_mascot() {
-  uart_puts("Drawing mascot w/ glasses...");
+  uart_puts("Drawing mascot...");
 
   draw_image(
     (uint32_t*) &_binary_mascot_data_start,
@@ -141,7 +150,7 @@ void draw_mascot() {
 extern const uint32_t _binary_no_glasses_data_start;
 
 void draw_no_glasses() {
-  uart_puts("Drawing mascot...");
+  uart_puts("Drawing no glasses...");
 
   draw_image(
     (uint32_t*) &_binary_no_glasses_data_start,
@@ -152,8 +161,6 @@ void draw_no_glasses() {
 }
 
 extern const uint32_t _binary_logo_data_start;
-// extern const uint32_t _binary_logo_data_end;
-// extern const uint32_t _binary_logo_data_size;
 
 #define LOGO_WIDTH  168
 #define LOGO_HEIGHT 256
@@ -170,53 +177,68 @@ void draw_logo() {
   uart_puts(" Done!\r\n");
 }
 
-#define BINARY_CHAR_SHEET _binary_character_sheet_base_data_start
-#define BINARY_CHAR_SHEET_CHAR_WIDTH 32
+void draw_char(char c, const uint32_t* font, uint32_t x, uint32_t y) {
+  uint32_t src_width = *font++;
+  uint32_t src_height = *font++;
 
-extern const uint32_t BINARY_CHAR_SHEET;
+  uint32_t char_width = src_width / 16;
+  uint32_t char_height = src_height / 8;
 
-void draw_char(char c, uint32_t x, uint32_t y) {
-  uint32_t* image_data = (uint32_t*) &BINARY_CHAR_SHEET;
+  uint32_t src_x = (c % 16) * char_width;
+  uint32_t src_y = (c / 16) * char_height;
 
-  uint32_t src_width = *image_data++;
-  uint32_t src_height = *image_data++;
-
-  uint32_t src_x = (c % 16) * (src_width / 16);
-  uint32_t src_y = (c / 16) * (src_height / 8);
-
-  uint32_t desc_width = src_width / 16;
-  uint32_t desc_height = src_height / 8;
+  uint32_t dest_width = src_width / 16;
+  uint32_t dest_height = src_height / 8;
 
   draw_image_base(
-    image_data,
+    font,
     src_x, src_y, src_width, src_height,
-    x, y, desc_width, desc_height
+    x, y, dest_width, dest_height
   );
 }
 
-void draw_string(char* str, uint32_t x, uint32_t y) {
-  uart_puts("Drawing string \"");
-  uart_puts(str);
-  uart_puts("\" ...");
+void draw_string(char* str, const uint32_t* font, uint32_t x, uint32_t y) {
+  uint32_t src_width = font[0];
+  uint32_t src_height = font[1];
 
-  for(int i=0; str[i] != 0; i++)
-    draw_char(str[i], x + (i * BINARY_CHAR_SHEET_CHAR_WIDTH), y);
+  uint32_t char_height = src_height / 8;
 
-  uart_puts(" Done!" EOL);
+  uint32_t my_x = x;
+  for(int i=0; str[i] != 0; i++) {
+    char c = str[i];
+    if(c == '\n') {
+      my_x = x;
+      y += char_height;
+      continue;
+    }
+
+    draw_char(c, font, my_x, y);
+
+    my_x += src_width / 16;
+  }
 }
 
-void draw_string_animated(char* str, uint32_t x, uint32_t y, uint32_t delay_count) {
+void draw_string_animated(char* str, const uint32_t* font, uint32_t x, uint32_t y, uint32_t delay_count) {
   if(delay_count == 0)
     delay_count = 100000;
 
-  uart_puts("Drawing animated string \"");
-  uart_puts(str);
-  uart_puts("\" ...");
+  uint32_t src_width = font[0];
+  uint32_t src_height = font[1];
 
+  uint32_t char_height = src_height / 8;
+
+  uint32_t my_x = x;
   for(int i=0; str[i] != 0; i++) {
-    draw_char(str[i], x + (i * BINARY_CHAR_SHEET_CHAR_WIDTH), y);
-    delay(delay_count);
-  }
+    char c = str[i];
+    if(c == '\n') {
+      my_x = x;
+      y += char_height;
+      continue;
+    }
 
-  uart_puts(" Done!" EOL);
+    draw_char(c, font, my_x, y);
+    delay(delay_count);
+
+    my_x += src_width / 16;
+  }
 }

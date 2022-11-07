@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RGBColor } from 'react-color';
 
 import { BsBookmark } from 'react-icons/bs';
@@ -7,11 +7,11 @@ import { ImArrowDown, ImArrowUp } from 'react-icons/im';
 
 import {
   Box, Button, ButtonGroup, Center, Heading,
-  Icon, IconButton, Stack, Tab, TabList,
+  Icon, IconButton, Select, Stack, Tab, TabList,
   TabPanel, TabPanels, Tabs, useColorMode,
 } from '@chakra-ui/react';
 
-import { clear, draw, getTimer, printDeviceTree, sayHello, setColor as apiSetColor } from './api';
+import { clear, draw, getTimer, loadSymbols, printDeviceTree, sayHello, setColor as apiSetColor } from './api';
 import { Address } from './Address';
 import { Bookmark, Bookmarks } from './Bookmarks';
 import { ColorPicker } from './ColorPicker';
@@ -31,6 +31,8 @@ function App() {
   const [address, setAddress] = useState<number>(0x8000);
   const [offset, setOffset] = useState<number>(0);
 
+  const [symbols, setSymbols] = useState<Record<string, number>>({});
+
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(
     loadBookmarks() ||
     [
@@ -38,6 +40,13 @@ function App() {
       { address: 0xa000 },
     ]
   );
+
+  useEffect(() => {
+    loadSymbols().then(res => {
+      const { symbols } = res.data;
+      setSymbols(symbols);
+    });
+  }, []);
 
   const updateBookmarks = (newBookmarks: Bookmark[]) => {
     setBookmarks(newBookmarks);
@@ -112,15 +121,25 @@ function App() {
         </Stack>
 
         <Stack direction='row'>
-          {bookmarks.length && (
             <Box>
-              <Heading size='sm'>Bookmarks</Heading>
-              <Bookmarks value={bookmarks} selected={address}
-                onClick={address => setAddress(address)}
-                onDelete={index => removeBookmarkAt(index)}
-              />
+              <Select width='150px'
+                onChange={e => setAddress(parseInt(e.currentTarget.value))}
+              >
+                {Object.entries(symbols).map(([name, address]) => (
+                  <option key={name} value={address}>{name}</option>
+                ))}
+              </Select>
+
+              {bookmarks.length && (
+                <>
+                  <Heading size='sm'>Bookmarks</Heading>
+                  <Bookmarks value={bookmarks} selected={address}
+                    onClick={address => setAddress(address)}
+                    onDelete={index => removeBookmarkAt(index)}
+                  />
+                </>
+              )}
             </Box>
-          )}
 
           <MemoryTable address={address + offset}/>
 

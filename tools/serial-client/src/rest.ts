@@ -5,6 +5,7 @@ import express from 'express';
 import { coprocRegisterCodes } from '@kitsune-os/common';
 
 import { Request } from './request';
+import { loadSymbols } from './kernel-symbols';
 
 const ReadCommand = (targetId: number, start: number, length: number) => {
   const buf = Buffer.alloc(10);
@@ -204,6 +205,11 @@ export const buildRestApp = (write: (data: Uint8Array) => void,) => {
     write(buffer);
 
     res.send({ success: true })
+  });
+
+  app.get('/kernel-symbol', async (req, res) => {
+    const symbols = await loadSymbols();
+    res.send({ success: true, symbols });
   });
 
   return app;

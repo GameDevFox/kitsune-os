@@ -19,3 +19,4 @@ export const readCPSR = () => api.get('/cpsr');
 export const writeCPSR = (value: number[]) => api.post('/cpsr', { value });
 
 export const setColor = (color: RGBColor) => api.post('/color', { color });
+export const loadSymbols = () => api.get('/kernel-symbol');

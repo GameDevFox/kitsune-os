@@ -75,13 +75,17 @@ Once you have `qemu-system-arm` installed you can run:
 
 # Running the Serial Client Web UI
 
-- Open a command line terminal in the `./tools/serial-client-web` directory
+**Note: Make sure the Kitsune OS and serial-client is running first**
 
-- Run `yarn` to install the `npm` packages
+Run the following:
 
-- Run `yarn start` to start the react app
+```
+cd ./tools/common
+yarn && yarn build
 
-**Note: Make sure the serial-client is running first**
+cd ../serial-client-web
+yarn && yarn start
+```
 
 # CREDITS
 

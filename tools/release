@@ -1,9 +1,14 @@
 #!/bin/bash
 
-rm -rf ./tools/serial-client/node_modules
-rm -rf ./tools/serial-client-web/node_modules
+echo 'Cleaning project files...'
+git ls-files --other | xargs rm
 
-make clean
-make
+echo 'Building SD card image...'
+./tools/build-sd-card-image
 
+rm *-raspios-*.img
+
+xz kitsune-sd-card.img
+
+echo 'Creating tarball...'
 tar --create --gzip --file kitsune-os.tar.gz *

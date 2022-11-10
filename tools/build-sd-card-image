@@ -1,0 +1,58 @@
+#!/bin/bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_DIR="${SCRIPT_DIR}/.."
+
+IMAGE_NAME=2022-09-22-raspios-bullseye-armhf-lite
+MOUNT_PATH=./mount
+
+if [ ! -f ${IMAGE_NAME}.img ]; then
+  if [ ! -f ${IMAGE_NAME}.img.xz ]; then
+    echo 'Downloading raspios image...'
+    wget https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2022-09-26/${IMAGE_NAME}.img.xz
+  fi
+
+  cp ${IMAGE_NAME}.img.xz raspios.img.xz
+
+  echo 'Extracting raspios image...'
+  xz --decompress raspios.img.xz
+else
+  echo 'Image already exists.'
+fi
+
+echo 'Creating raspios loop device...'
+LOOP_DEVICE=$(losetup --find --show --partscan raspios.img)
+BOOT_PARTITION=${LOOP_DEVICE}p1
+
+echo 'Mounting raspios boot partition...'
+mkdir -p ${MOUNT_PATH}
+mount ${BOOT_PARTITION} ${MOUNT_PATH}
+
+make -C "${PROJECT_DIR}"
+
+echo 'Copying kernel image...'
+cp "${PROJECT_DIR}/kitsune.img" ${MOUNT_PATH}
+
+echo 'Upading config.txt...'
+CONFIG_PATH=${MOUNT_PATH}/config.txt
+echo 'enable_uart=1' >> ${CONFIG_PATH}
+echo 'dtoverlay=disable-bt' >> ${CONFIG_PATH}
+echo >> ${CONFIG_PATH}
+echo 'kernel=kitsune.img' >> ${CONFIG_PATH}
+
+echo 'Unmounting raspios boot partition...'
+umount ${MOUNT_PATH}
+rmdir ${MOUNT_PATH}
+
+echo 'Deleting linux partition...'
+parted ${LOOP_DEVICE} print
+parted ${LOOP_DEVICE} rm 2
+
+echo 'Detaching loop devices...'
+losetup -d ${LOOP_DEVICE}
+
+echo 'Creating a small image which only includes the first partition data...'
+dd if=raspios.img of=kitsune-sd-card.img bs=1M count=300
+
+echo 'Cleaning up...'
+rm raspios.img

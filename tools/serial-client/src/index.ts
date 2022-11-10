@@ -11,7 +11,7 @@ import { buildRestApp } from "./rest";
 const restPort = 8080;
 
 let frameHandlerFn = (frame: Frame) => {};
-export const setFrameHandler = (fn: (frame: Frame) => void) => frameHandlerFn = fn;;
+export const setFrameHandler = (fn: (frame: Frame) => void) => frameHandlerFn = fn;
 
 export const handler = Handler(frame => {
   frameHandlerFn(frame);

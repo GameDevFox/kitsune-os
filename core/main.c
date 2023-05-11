@@ -261,11 +261,11 @@ void draw_kitsune_text() {
 }
 
 void draw_mascot_text() {
-  char* another_long_str =
+  char* mascot_text_str =
     "Welcome to Kitsune!\n"
     "Let's learn and have\n"
     "fun together.";
-  draw_string_animated(another_long_str, micro_font, 1000, 180, 50000);
+  draw_string_animated(mascot_text_str, micro_font, 1000, 180, 50000);
 }
 
 char uptime_str[16];

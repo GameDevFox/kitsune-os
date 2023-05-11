@@ -2,6 +2,7 @@
 *.elf
 *.img
 *.o
+*.xz
 
 dist
 node_modules

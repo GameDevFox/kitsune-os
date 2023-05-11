@@ -78,7 +78,11 @@ export const MemoryTable = (props: MemoryTableProps) => {
 
     rows.push(
       <Tr key={`row${i}`}>
-        <Td padding='1' paddingRight='4'>{((i * 16) + address).toString(16)}</Td>
+        <Td padding='1' paddingRight='4'>
+          <pre>
+            {((i * 16) + address).toString(16)}
+          </pre>
+        </Td>
         {hexCells}
         {textCells}
       </Tr>

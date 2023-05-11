@@ -69,7 +69,7 @@ function App() {
   };
 
   return (
-    <Center>
+    <Box margin={2}>
       <Stack>
         <ButtonGroup>
           <Button onClick={toggleColorMode}>
@@ -155,7 +155,7 @@ function App() {
           </Stack>
         </Stack>
       </Stack>
-    </Center>
+    </Box>
   );
 }
 

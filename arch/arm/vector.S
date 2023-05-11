@@ -41,7 +41,6 @@ GENERIC_EXCEPTION reset, "RESET"
 software_interrupt_exception:
 	push {lr}
 
-	mrc p15, 0, r0, c1, c1, 0 // Read SCR into r0
 	ldr r1, =uart_putc
 	bl word_to_hex
 	adr r0, new_line_str

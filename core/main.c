@@ -248,9 +248,11 @@ void print_performance_counter() {
 
 extern const uint32_t _binary_character_sheet_base_data_start[];
 extern const uint32_t _binary_character_sheet_micro_data_start[];
+extern const uint32_t _binary_character_sheet_nano_data_start[];
 
 #define base_font _binary_character_sheet_base_data_start
 #define micro_font _binary_character_sheet_micro_data_start
+#define nano_font _binary_character_sheet_nano_data_start
 
 void draw_kitsune_text() {
   uint32_t str_width = 32 * 7; // 32 pixels per char
@@ -259,11 +261,11 @@ void draw_kitsune_text() {
 }
 
 void draw_mascot_text() {
-  char* long_str =
-    "Welcome back, User!\n"
-    "Are you ready to learn today?\n"
-    "*smile*";
-  draw_string_animated(long_str, micro_font, 400, 220, 20000);
+  char* another_long_str =
+    "Welcome to Kitsune!\n"
+    "Let's learn and have\n"
+    "fun together.";
+  draw_string_animated(another_long_str, micro_font, 1000, 180, 50000);
 }
 
 char uptime_str[16];
@@ -519,13 +521,12 @@ void main(uint32_t r0, uint32_t r1, uint32_t atags)
   fb_test_2();
   draw_logo();
 
-  // draw_mascot();
-  // draw_no_glasses();
+  draw_aki();
 
   delay(1000000);
 
   draw_kitsune_text();
-  // draw_mascot_text();
+  draw_mascot_text();
 
   draw_clock(0, 0, 0);
 

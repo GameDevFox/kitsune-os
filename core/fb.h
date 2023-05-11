@@ -6,6 +6,7 @@ void clear_pixels();
 
 void fb_test();
 void fb_test_2();
+void draw_aki();
 void draw_mascot();
 void draw_no_glasses();
 void draw_logo();

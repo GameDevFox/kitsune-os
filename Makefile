@@ -27,7 +27,7 @@ CHARACTER_SHEET_OBJS = \
 	image/character-sheet-base.o \
 	image/character-sheet-micro.o \
 	image/character-sheet-nano.o
-IMAGE_OBJS = $(CHARACTER_SHEET_OBJS) image/logo.o image/mascot.o image/no-glasses.o
+IMAGE_OBJS = $(CHARACTER_SHEET_OBJS) image/aki.o image/logo.o image/mascot.o image/no-glasses.o
 
 COMMON_OBJS = $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS)
 

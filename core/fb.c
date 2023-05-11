@@ -53,7 +53,7 @@ void draw_curve(int inner, int outer) {
     for(int x = 0; x < FB_WIDTH; x++) {
       int pixel = y * FB_WIDTH + x;
 
-      int hyp2 = x * x + y * y;
+      int hyp2 = (x - FB_WIDTH) * (x - FB_WIDTH) + y * y;
 
       if(hyp2 > inner_len && hyp2 < outer_len) {
         fb_write(pixel * 4, binary_entry);
@@ -94,10 +94,10 @@ void draw_image_base(
 
   image_data += src_y * src_width;
 
-  for(uint32_t y = src_y; y < src_height && y < src_y + dest_height; y++) {
+  for(uint32_t y = src_y; y < src_height && y < src_y + dest_height && y < FB_HEIGHT; y++) {
     image_data += src_x;
 
-    for(uint32_t x = src_x; x < src_width && x < src_x + dest_width; x++) {
+    for(uint32_t x = src_x; x < src_width && x < src_x + dest_width && x < FB_WIDTH; x++) {
       const uint32_t* image_data_start = image_data;
 
       uint32_t color = *image_data++;
@@ -132,6 +132,19 @@ void draw_image(uint32_t* image_data, uint32_t dest_x, uint32_t dest_y) {
     0, 0, src_width, src_height,
     dest_x, dest_y, 0, 0
   );
+}
+
+extern const uint32_t _binary_aki_data_start;
+
+void draw_aki() {
+  uart_puts("Drawing Aki-chan...");
+
+  draw_image(
+    (uint32_t*) &_binary_aki_data_start,
+    980, 50 // x, y
+  );
+
+  uart_puts(" Done!\r\n");
 }
 
 extern const uint32_t _binary_mascot_data_start;

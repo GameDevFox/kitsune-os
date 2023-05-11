@@ -4,59 +4,33 @@ import express from 'express';
 
 import { coprocRegisterCodes } from '@kitsune-os/common';
 
-import { Request } from './request';
+import { Api } from './api';
+import { CPSRCommand } from './commands';
 import { loadSymbols } from './kernel-symbols';
+import { Request } from './request';
 
-const ReadCommand = (targetId: number, start: number, length: number) => {
-  const buf = Buffer.alloc(10);
-  buf.write("R");
-  buf.writeUIntLE(targetId, 1, 1);
-  buf.writeUIntLE(start, 2, 4); // Start
-  buf.writeUIntLE(length, 6, 4); // Length
-
-  return buf;
-};
-
-export const buildRestApp = (write: (data: Uint8Array) => void,) => {
-  const request = Request(write);
-
+export const buildRestApp = (
+  request: Request,
+  api: Api,
+) => {
   const app = express();
 
   app.use(cors());
   app.use(json({ strict: false }));
 
   app.get("/hello", (req, res) => {
-    write(Buffer.from("1"));
+    api.hello();
     res.send({ success: true });
   });
 
   app.get("/clear", (req, res) => {
-    write(Buffer.from("0"));
+    api.clear();
     res.send({ success: true });
   });
 
   app.get("/draw/:name", (req, res) => {
     const { name } = req.params;
-
-    switch(name) {
-      case 'curve':
-        write(Buffer.from("7"));
-        break;
-      case 'mascot':
-        write(Buffer.from("8"));
-        break;
-      case 'mascot-no-glasses':
-        write(Buffer.from("8g"));
-        break;
-      case 'logo':
-        write(Buffer.from("9"));
-        break;
-      case 'kitsune-text':
-        write(Buffer.from("r"));
-        break;
-      default:
-        console.error(`No such object to draw: ${name}`);
-    }
+    api.draw(name as any);
 
     res.send({ success: true });
   });
@@ -65,9 +39,8 @@ export const buildRestApp = (write: (data: Uint8Array) => void,) => {
     const start = Number(req.params.start);
     const length = Number(req.params.length);
 
-    request({
-      command: targetId => ReadCommand(targetId, start, length),
-      fn: data => res.send({ success: true, data }),
+    api.readMemory(start, length, data => {
+      res.send({ success: true, data });
     });
   });
 
@@ -148,33 +121,14 @@ export const buildRestApp = (write: (data: Uint8Array) => void,) => {
   });
 
   app.get("/print-device-tree", (req, res) => {
-    write(Buffer.from("d"));
+    api.printDeviceTree();
     res.send({ success: true });
   });
 
   app.get("/timer", (req, res) => {
-    write(Buffer.from("t"));
+    api.printTimer();
     res.send({ success: true });
   });
-
-  const CPSRCommand = (value?: number[]) => {
-    return (targetId: number) => {
-      const buffer = Buffer.alloc(value ? 7 : 3);
-
-      buffer.write('3', 0);
-      buffer.writeUInt8(targetId, 1);
-      buffer.writeUInt8(value ? 1 : 0, 2);
-
-      if(value) {
-        buffer[3] = value[0];
-        buffer[4] = value[1];
-        buffer[5] = value[2];
-        buffer[6] = value[3];
-      }
-
-      return buffer;
-    };
-  };
 
   app.get('/cpsr', (req, res) => {
     request({
@@ -188,22 +142,13 @@ export const buildRestApp = (write: (data: Uint8Array) => void,) => {
 
     request({
       command: CPSRCommand(value),
-      fn: data => res.send({ success: true }),
+      fn: () => res.send({ success: true }),
     });
   });
 
   app.post('/color', (req, res) => {
     const { color } = req.body;
-
-    const buffer = Buffer.alloc(5);
-    buffer.write('e', 0);
-    buffer[1] = color.b;
-    buffer[2] = color.g;
-    buffer[3] = color.r;
-    buffer[4] = 0xff;
-
-    write(buffer);
-
+    api.setColor(color);
     res.send({ success: true })
   });
 

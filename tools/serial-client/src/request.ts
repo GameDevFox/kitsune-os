@@ -3,7 +3,7 @@ import { stdout } from "process";
 import { setFrameHandler } from ".";
 import { BufferReader } from "./output-handler";
 
-export interface Request {
+export interface RequestEntry {
   command: (targetId: number) => Buffer;
   fn: (buffer: Buffer) => void;
 };
@@ -27,7 +27,7 @@ export const ReadBytesHandler = (length: number, fn: (data: Buffer) => void) => 
 };
 
 export const Request = (write: (data: Uint8Array) => void) => {
-  const newRequests: Record<string, Request> = {};
+  const newRequests: Record<string, RequestEntry> = {};
 
   setFrameHandler(frame => {
     if(frame.target === 0) {
@@ -47,7 +47,7 @@ export const Request = (write: (data: Uint8Array) => void) => {
     delete newRequests[frame.target];
   });
 
-  return (request: Request) => {
+  return (request: RequestEntry) => {
     // New implementation
     let targetId = 0;
     for(let i=1; i<128; i++) {
@@ -67,3 +67,5 @@ export const Request = (write: (data: Uint8Array) => void) => {
     write(buffer);
   };
 };
+
+export type Request = ReturnType<typeof Request>;

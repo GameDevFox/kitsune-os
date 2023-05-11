@@ -5,7 +5,12 @@ import { open } from "fs/promises";
 import { exit } from "process";
 import { Server, Socket } from "net";
 
+import { startStandaloneServer } from "@apollo/server/standalone";
+
+import { Api } from "./api";
+import { build as buildGraphQLServer } from "./graphql";
 import { Frame, Handler } from "./output-handler";
+import { Request } from "./request";
 import { buildRestApp } from "./rest";
 
 const restPort = 8080;
@@ -20,14 +25,29 @@ export const handler = Handler(frame => {
 const tcpMode = () => {
   const server = new Server();
 
-  server.on('connection', (socket: Socket) => {
-    const app = buildRestApp(data => socket.write(data));
-    const server = app.listen(restPort);
+  server.on('connection', async (socket: Socket) => {
+    const write = (data: Uint8Array) => socket.write(data);
+    const request = Request(write);
+
+    const api = Api(write, request);
+
+    // REST
+    const restApp = buildRestApp(request, api);
+    const restServer = restApp.listen(restPort);
+    console.log(`REST app listening on ${restPort} ...`);
+
+    // GraphQL
+    const graphQLServer = buildGraphQLServer(api);
+    const { url } = await startStandaloneServer(graphQLServer, {
+      listen: { port: 4000 },
+    });
+    console.log(`GraphQL Server ready at: ${url}`);
+    console.log();
 
     socket.on('data', handler);
-    socket.on('close', () => server.close());
-
-    console.log(`Listening on ${restPort} ...`);
+    socket.on('close', () => {
+       restServer.close();
+    });
   });
 
   server.listen(8081);
@@ -56,11 +76,24 @@ const charDeviceMode = async (charDev: string) => {
       }
     });
 
-    open(charDev, "w").then(inFile => {
-      const app = buildRestApp(data => inFile.write(data));
-      app.listen(restPort);
+    open(charDev, "w").then(async inFile => {
+      const write = (data: Uint8Array) => inFile.write(data);
+      const request = Request(write);
 
-      console.log(`Listening on ${restPort} ...`);
+      const api = Api(write, request);
+
+      // REST
+      const app = buildRestApp(request, api);
+      app.listen(restPort);
+      console.log(`REST app listening on ${restPort} ...`);
+
+      // GraphQL
+      const graphQLServer = buildGraphQLServer(api);
+      const { url } = await startStandaloneServer(graphQLServer, {
+        listen: { port: 4000 },
+      });
+      console.log(`GraphQL Server ready at: ${url}`);
+      console.log();
     });
   });
 };

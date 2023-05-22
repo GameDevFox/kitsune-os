@@ -25,8 +25,11 @@ export const Api = (
   write: (data: Uint8Array) => void,
   request: Request,
 ) => {
+  const sendBytes = (bytes: string) => write(Buffer.from(bytes));
+
   const clear = () => write(Buffer.from("0"));
   const hello = () => write(Buffer.from("1"));
+  const instructionAbort = () => write(Buffer.from("5"));
 
   const draw = (name: ImageNames) => {
     if(!(name in images))
@@ -63,7 +66,8 @@ export const Api = (
   }
 
   return {
-    clear, draw, hello,
+    sendBytes,
+    clear, draw, hello, instructionAbort,
     printDeviceTree, printTimer,
     readMemory, writeMemory,
     setColor,

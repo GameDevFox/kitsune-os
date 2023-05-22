@@ -1,8 +1,11 @@
-import { ApolloServer } from '@apollo/server'
+import { readFileSync } from 'fs';
 
+import { ApolloServer } from '@apollo/server'
 import { coprocRegisterCodes } from '@kitsune-os/common';
 
 import { Api, images } from './api';
+import { spawnSync } from 'child_process';
+import { loadSymbols } from './kernel-symbols';
 
 interface Color {
   red: number,
@@ -51,6 +54,11 @@ const typeDefs = `
     printDeviceTree: Boolean!
     printTimer: Boolean!
     setColor(color: Color!): Boolean!
+
+    test: Int!
+    flash: Int!
+    instructionAbort: Boolean!
+    sendBytes(bytes: String!): Boolean!
   }
 `;
 
@@ -111,6 +119,52 @@ export const build = (api: Api) => {
         api.setColor({ r: red, g: green, b: blue });
         return true;
       },
+
+      test: () => {
+        const mascotData = readFileSync('../../image/mascot.data');
+
+        const start = Date.now();
+        return new Promise((resolve) => {
+          api.writeMemory(0x175054, mascotData, () => {
+            const stop = Date.now();
+            const delta = stop - start;
+            resolve(delta);
+          });
+        });
+      },
+      flash: async () => {
+        console.log('FLASH');
+
+        const { __data_start } = await loadSymbols();
+        console.log('__data_start', __data_start);
+
+        // The whole image is offset at 0x8000
+        const skip = __data_start - 0x8000;
+
+        const { stdout: data } = spawnSync(
+          'dd', ['if=../../kitsune.img', 'bs=1', `skip=${skip}`]
+        );
+
+        console.log('data', data.length, data);
+
+        return new Promise((resolve) => {
+          const start = Date.now();
+          api.writeMemory(__data_start, data, () => {
+            const stop = Date.now();
+            const delta = stop - start;
+            resolve(delta);
+          });
+        });
+      },
+      instructionAbort: () => {
+        api.instructionAbort();
+        return true;
+      },
+      sendBytes: (_parent: None, args: { bytes: string }) => {
+        const { bytes } = args;
+        api.sendBytes(bytes);
+        return true;
+      }
     },
   };
 

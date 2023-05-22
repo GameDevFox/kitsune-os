@@ -83,6 +83,9 @@ qemu-gdb: $(QEMU_KERNEL)
 qemu-tcp: $(QEMU_KERNEL)
 	$(QEMU_ARM) $(QEMU_OPTS) -serial tcp:localhost:8081
 
+qemu-gdb-tcp: $(QEMU_KERNEL)
+	$(QEMU_ARM) -S -s $(QEMU_OPTS) -serial tcp:localhost:8081
+
 docker-make:
 	docker build -t kitsune-os-make .
 	docker run -v "$(PWD)":/kitsune-os kitsune-os-make

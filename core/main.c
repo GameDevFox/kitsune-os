@@ -11,6 +11,7 @@
 #include "gic.h"
 #include "input.h"
 #include "output.h"
+#include "section.h"
 #include "serial-protocol.h"
 #include "system-timer.h"
 #include "uart.h"
@@ -57,7 +58,7 @@ void read_memory() {
   );
 }
 
-void write_memory() {
+__eden void write_memory() {
   char target = uart_getc();
   size_t start = uart_getw();
   size_t length = uart_getw();
@@ -158,6 +159,7 @@ void init_irq() {
   uart_puts("enableIRQ and routeIRQtoCPUS" EOL);
   enable_irq(VC_IRQ_TIMER_1);
   route_irq_to_cpus(VC_IRQ_TIMER_1, 0x01);
+  toggle_irqs();
   uart_puts("Done" EOL);
 }
 

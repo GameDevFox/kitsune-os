@@ -97,3 +97,8 @@ https://www.etsy.com/people/duhruqyp
 
 https://www.etsy.com/shop/GloristicArt
 
+<img alt="Aki" src="./image/aki.png" width="150px">
+
+ShizukoDesu
+
+https://shizukodesu.carrd.co/

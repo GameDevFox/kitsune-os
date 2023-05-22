@@ -2,10 +2,20 @@
 
 .section ".text.exception_vector"
 
+#define print_hex \
+	ldr r1, =uart_putc; \
+	bl word_to_hex
+
+#define print(str) \
+	adr r0, str; \
+	bl uart_puts
+
+#define print_nl print(new_line_str)
+
 .macro GENERIC_EXCEPTION name, str
 \name\()_exception:
-	push {lr}
 	mov sp, #0x100000
+	push {lr}
 
 	adr r0, \name\()_str
 	bl uart_puts
@@ -19,64 +29,26 @@
 
 .globl exception_vector
 exception_vector:
-	b reset_exception
-	b undefined_instruction_exception
-	b software_interrupt_exception
-	b instruction_abort_exception
-	b data_abort_exception
-	b hypervisor_call_exception
-	b irq_exception
-	b fiq_exception
+	b reset_exception                 // +0
+	b undefined_instruction_exception // +4
+	b software_interrupt_exception    // +8
+	b instruction_abort_exception     // +12
+	b data_abort_exception            // +16
+	b hypervisor_call_exception       // +20
+	b irq_exception                   // +24
+	b fiq_exception                   // +28
 
 GENERIC_EXCEPTION reset, "RESET"
 
-// High
-// (8)  16M
-// 12   1M
-// Mid
-// (16) 64K
-// 20   16K
-// 4K Lower
-
-software_interrupt_exception:
-	push {lr}
-
-	ldr r1, =uart_putc
-	bl word_to_hex
-	adr r0, new_line_str
-	bl uart_puts
-
-	adr r0, software_interrupt_str
-	bl uart_puts
-
-	ldr r0, [sp]
-	sub r0, #4
-	ldr r1, =uart_putc
-	bl word_to_hex
-
-	adr r0, new_line_str
-	bl uart_puts
-
-	pop {lr}
-	eret
-software_interrupt_str:
-	.asciz "== SOFTWARE INTERRUPT ==\r\n"
-	.align(2)
-
 undefined_instruction_exception:
-	mov sp, #0x100000
 	push {lr}
 
-	adr r0, undefined_instruction_str
-	bl uart_puts
+	print(undefined_instruction_str)
 
 	ldr r0, [sp]
 	sub r0, #8
-	ldr r1, =uart_putc
-	bl word_to_hex
-
-	adr r0, new_line_str
-	bl uart_puts
+	print_hex
+	print_nl
 
 	pop {lr}
 	eret
@@ -84,13 +56,48 @@ undefined_instruction_str:
 	.asciz "== UNDEFINED INSTRUCTION ==\r\n"
 	.align(2)
 
-// GENERIC_EXCEPTION software_interrupt, "SOFTWARE INTERRUPT"
+software_interrupt_exception:
+	push {lr}
+
+	print_hex
+	print_nl
+
+	print(software_interrupt_str)
+
+	ldr r0, [sp]
+	sub r0, #4
+	print_hex
+	print_nl
+
+	pop {lr}
+	eret
+software_interrupt_str:
+	.asciz "== SOFTWARE INTERRUPT ==\r\n"
+	.align(2)
+
 GENERIC_EXCEPTION instruction_abort, "INSTRUCTION ABORT"
-GENERIC_EXCEPTION data_abort, "DATA ABORT"
+
+data_abort_exception:
+	push {r0, r1, lr}
+
+	print(data_abort_str)
+
+	ldr r0, [sp, #8]
+	sub r0, #8
+	print_hex
+	print_nl
+
+	pop {r0, r1, lr}
+
+	@ eret
+	b input_loop
+data_abort_str:
+  .asciz "== DATA ABORT ==\r\n"
+  .align(2)
+
 GENERIC_EXCEPTION hypervisor_call, "HYPERVISOR CALL"
 
 irq_exception:
-	mov sp, #0x100000
 	push {r0-r12, lr}
 
 	// Print SPSR
@@ -100,8 +107,7 @@ irq_exception:
 	// adr r0, new_line_str
 	// bl uart_puts
 
-	adr r0, irq_str // == IRQ ==
-	bl uart_puts
+	print(irq_str)
 
 	// Get Interrupt ID
 	mov r1, #0x200c
@@ -120,8 +126,7 @@ irq_exception:
 	mov r0, r4
 	str r0, [r1]
 
-	adr r0, end_irq_str // == END IRQ ==
-	bl uart_puts
+	print(end_irq_str)
 
 	pop {r0-r12, lr}
 	subs pc, lr, #4

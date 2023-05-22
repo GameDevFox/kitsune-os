@@ -49,17 +49,15 @@ set_vbar:
   ldr r0, =exception_vector
   mcr p15, 0, r0, c12, c0, 0
 
-// load_jump_table:
-//   adr r1, jump_table
-//   mov r2, #0
-//   adr r4, jump_table_addresses_end
-// 1:
-//   ldr r0, [r1]
-//   str r0, [r2]
-//   add r1, r1, #4
-//   add r2, r2, #4
-//   cmp r1, r4
-//   blt 1b
+set_exception_stack_pointers:
+  ldr r0, =__exception_stack_undefined_instruction
+  msr sp_und, r0
+  ldr r0, =__exception_stack_data_abort
+  msr sp_abt, r0
+  ldr r0, =__exception_stack_irq
+  msr sp_irq, r0
+  ldr r0, =__exception_stack_fiq
+  msr sp_fiq, r0
 
 enable_cycle_counter:
   mrc p15, 0, r0, c9, c12, 1
@@ -73,15 +71,7 @@ enable_cycle_counter:
   mov r0, #0x1f;
   mcr p15, 0, r0, c9, c12, 5 // Set PMSELR.SEL to CCNT (#31)
 
-  // Don't need this anymore since we switched
-  // out of HYP (PL2) to SVC (PL1)
-  // mrc p15, 0, r0, c9, c13, 1
-  // orr r0, r0, #0x8000000 // Write PMXEVTYPER.NSH
-  // mcr p15, 0, r0, c9, c13, 1
-
 zero_out_bss:
-  // QUESTION: Is this needed in Kitsune since
-  // we plan on having managed memory?
   ldr r4, =__bss_start
   ldr r9, =__bss_end
   mov r5, #0
@@ -109,5 +99,5 @@ enter_kernel:
 
 .globl halt
 halt:
-  wfe
+  wfi
   b halt

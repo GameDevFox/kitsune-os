@@ -11,7 +11,11 @@ import {
   TabPanel, TabPanels, Tabs, useColorMode,
 } from '@chakra-ui/react';
 
-import { clear, draw, getTimer, loadSymbols, printDeviceTree, sayHello, setColor as apiSetColor } from './api';
+import {
+  clear, draw, getTimer, instructionAbort,
+  loadSymbols, printDeviceTree, sayHello,
+  setColor as apiSetColor
+} from './api';
 import { Address } from './Address';
 import { Bookmark, Bookmarks } from './Bookmarks';
 import { ColorPicker } from './ColorPicker';
@@ -81,6 +85,7 @@ function App() {
               <Button onClick={sayHello}>Hello!</Button>
               <Button onClick={printDeviceTree}>Print Device Tree</Button>
               <Button onClick={getTimer}>Get Timer</Button>
+              <Button onClick={instructionAbort}>Get Timer</Button>
             </ButtonGroup>
 
             <ButtonGroup>

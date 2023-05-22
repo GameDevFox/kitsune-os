@@ -23,12 +23,12 @@ uint32_t read_timer() {
 }
 
 void write_timer_compare(char timer, uint32_t time) {
-  uint32_t addr = STIMER_COMPARE_0 + timer;
+  uint32_t* addr = (uint32_t*)STIMER_COMPARE_0 + timer;
   mmio_write(addr, time);
 }
 
 void clear_timer_compare(char timer) {
-  uint32_t addr = STIMER_CONTROL;
+  uint32_t* addr = (uint32_t*)STIMER_CONTROL;
   mmio_write(addr, 1 << timer);
 }
 

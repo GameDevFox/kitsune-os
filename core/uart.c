@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 #include "mem.h"
+#include "section.h"
 #include "uart.h"
 
 extern int raspi;
@@ -11,12 +12,12 @@ extern uint32_t mmio_base;
 #define ONE "#1"
 
 // Memory-Mapped I/O output
-static void mmio_write(uint32_t reg, uint32_t data) {
+__eden static void mmio_write(uint32_t reg, uint32_t data) {
   write(mmio_base + reg, data);
 }
 
 // Memory-Mapped I/O input
-static uint32_t mmio_read(uint32_t reg) {
+__eden static uint32_t mmio_read(uint32_t reg) {
   return read(mmio_base + reg);
 }
 
@@ -86,13 +87,13 @@ void uart_init() {
 }
 
 // OUTPUT
-void uart_putc(unsigned char c) {
+__eden void uart_putc(unsigned char c) {
   // Wait for UART to become ready to transmit.
   while(mmio_read(UART0_FR) & (1 << 5)) {}
   mmio_write(UART0_DR, c);
 }
 
-void uart_puts(const char* str) {
+__eden void uart_puts(const char* str) {
   for(uint32_t i = 0; str[i] != '\0'; i++)
     uart_putc((unsigned char) str[i]);
 }
@@ -103,7 +104,7 @@ void uart_write(const char* str, uint32_t count) {
 }
 
 // INPUT
-unsigned char uart_getc() {
+__eden unsigned char uart_getc() {
   // Wait for UART to have received something.
   while(mmio_read(UART0_FR) & (1 << 4)) {}
   return mmio_read(UART0_DR);
@@ -118,7 +119,7 @@ void uart_getc_pipe(void out()) {
   }
 }
 
-uint32_t uart_getw() {
+__eden uint32_t uart_getw() {
   uint32_t result = 0;
 
   result |= uart_getc() << 0x00;

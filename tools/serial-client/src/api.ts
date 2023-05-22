@@ -1,4 +1,6 @@
-import { Color, ReadCommand, SetColorBuffer } from "./commands";
+import {
+  Color, ReadCommand, SetColorBuffer, WriteCommand
+} from "./commands";
 import { Request } from './request';
 
 export const images = {
@@ -46,6 +48,15 @@ export const Api = (
     });
   };
 
+  const writeMemory = (
+    start: number, data: Buffer, fn: (data: Buffer) => void
+  ) => {
+    request({
+      command: targetId => WriteCommand(targetId, start, data),
+      fn,
+    })
+  }
+
   const setColor = (color: Color) => {
     const buffer = SetColorBuffer(color);
     write(buffer);
@@ -54,7 +65,7 @@ export const Api = (
   return {
     clear, draw, hello,
     printDeviceTree, printTimer,
-    readMemory,
+    readMemory, writeMemory,
     setColor,
   };
 };

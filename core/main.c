@@ -58,21 +58,27 @@ void read_memory() {
 }
 
 void write_memory() {
+  char target = uart_getc();
   size_t start = uart_getw();
-  size_t size = uart_getw();
+  size_t length = uart_getw();
 
   uart_puts("Writing ");
-  word_to_hex(size, uart_putc);
+  word_to_hex(length, uart_putc);
   uart_puts(" bytes to ");
   word_to_hex(start, uart_putc);
   uart_puts(" ...");
 
-  size_t end = start + size;
+  size_t end = start + length;
 
   for(size_t i = start; i < end; i++) {
     char value = uart_getc();
     *(char*)i = value;
   }
+
+  sp_frame(
+    sp_target(target);
+    sp_write((char*) start, length);
+  );
 
   uart_puts(" Done!" EOL);
 }

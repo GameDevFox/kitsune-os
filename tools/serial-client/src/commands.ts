@@ -32,6 +32,29 @@ export const ReadCommand = (
   return buf;
 };
 
+export const WriteCommand = (
+  targetId: number,
+  start: number,
+  data: Buffer,
+) => {
+  const length = data.length;
+
+  const buf = Buffer.alloc(10 + length);
+
+  buf.write("W");
+  buf.writeUIntLE(targetId, 1, 1);
+  buf.writeUIntLE(start, 2, 4); // Start
+  buf.writeUIntLE(length, 6, 4); // Length
+
+  // TODO: Implement progress
+
+  data.forEach((byte, index) => {
+    buf.writeUint8(byte, 10 + index);
+  });
+
+  return buf;
+};
+
 export interface Color {
   r: number,
   g: number,

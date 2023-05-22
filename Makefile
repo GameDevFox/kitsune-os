@@ -57,7 +57,7 @@ $(BINARY_KERNEL): $(ELF_KERNEL)
 	$(PREFIX)objcopy $(ELF_KERNEL) -O binary $(BINARY_KERNEL)
 
 # Images
-image/%.o:
+image/%.o: image/%.png
 	make -C image $*.o
 
 # Device Tree for QEMU

@@ -2,11 +2,19 @@ import { Color, ReadCommand, SetColorBuffer } from "./commands";
 import { Request } from './request';
 
 export const images = {
-  curve: '7',
-  mascot: '8',
+  'curve': '7',
+
+  'logo': '9',
+
+  'aki': '#',
+  'aki-with-glasses': '$',
+  'aki-without-glasses': '%',
+
+  'mascot': '8',
   'mascot-with-glasses': '8g',
-  logo: '9',
+
   'kitsune-text': 'r',
+  'mascot-text': 'y',
 };
 
 export type ImageNames = keyof typeof images;

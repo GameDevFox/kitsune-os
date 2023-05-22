@@ -392,13 +392,17 @@ void command_handler(char input) {
 
     case '!': call_instruction(binary_entry, 0); break;
     case '@': disable_polling(); break;
+    case '#': draw_aki(); break;
+    case '$': draw_aki_glasses(); break;
+    case '%': draw_aki_no_glasses(); break;
     case '=': binary_entry_mode(); break;
 
     case 'q': do_toggle_irq(); break;
     case 'w': write_word(); break;
     case 'e': set_binary_entry(); break;
-    case 'r': draw_kitsune_text(); draw_mascot_text(); break;
+    case 'r': draw_kitsune_text(); break;
     case 't': print_timer(); break;
+    case 'y': draw_mascot_text(); break;
 
     case 'a': uart_puts(VT_SAVE VT_HOME VT_RED "Red Text" EOL VT_DEFAULT VT_LOAD); break;
     case 's': do_enable_cache(); break;

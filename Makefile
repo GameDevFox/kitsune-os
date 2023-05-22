@@ -32,7 +32,9 @@ IMAGE_OBJS = $(CHARACTER_SHEET_OBJS) \
 	image/logo.o \
 	image/mascot.o \
 	image/glasses.o \
-	image/aki.o
+	image/aki.o \
+	image/aki-glasses.o \
+	image/aki-no-glasses.o
 
 COMMON_OBJS = $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS)
 

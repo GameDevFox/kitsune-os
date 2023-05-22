@@ -45,8 +45,9 @@ const tcpMode = () => {
     console.log();
 
     socket.on('data', handler);
-    socket.on('close', () => {
-       restServer.close();
+    socket.on('close', async () => {
+      await graphQLServer.stop();
+      restServer.close();
     });
   });
 

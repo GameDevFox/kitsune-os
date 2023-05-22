@@ -134,6 +134,33 @@ void draw_image(uint32_t* image_data, uint32_t dest_x, uint32_t dest_y) {
   );
 }
 
+// Logo
+
+#define LOGO_WIDTH  168
+#define LOGO_HEIGHT 256
+
+extern const uint32_t _binary_logo_data_start;
+
+void draw_logo() {
+  uart_puts("Drawing logo...");
+
+  draw_image(
+    (uint32_t*) &_binary_logo_data_start,
+    (FB_WIDTH / 2) - (LOGO_WIDTH / 2), // x pos
+    (FB_HEIGHT / 2) - (LOGO_HEIGHT / 2) // y pos
+  );
+
+  uart_puts(" Done!\r\n");
+}
+
+// Aki
+
+#define AKI_X 980
+#define AKI_Y 50
+
+#define AKI_GLASSES_X 422
+#define AKI_GLASSES_Y 218
+
 extern const uint32_t _binary_aki_data_start;
 
 void draw_aki() {
@@ -141,11 +168,45 @@ void draw_aki() {
 
   draw_image(
     (uint32_t*) &_binary_aki_data_start,
-    980, 50 // x, y
+    AKI_X, AKI_Y // x, y
   );
 
   uart_puts(" Done!\r\n");
 }
+
+extern const uint32_t _binary_aki_glasses_data_start;
+
+void draw_aki_glasses() {
+  uart_puts("Drawing Aki glasses...");
+
+  draw_image(
+    (uint32_t*) &_binary_aki_glasses_data_start,
+    AKI_X + AKI_GLASSES_X, AKI_Y + AKI_GLASSES_Y // x, y
+  );
+
+  uart_puts(" Done!\r\n");
+}
+
+extern const uint32_t _binary_aki_no_glasses_data_start;
+
+void draw_aki_no_glasses() {
+  uart_puts("Drawing Aki without glasses...");
+
+  draw_image(
+    (uint32_t*) &_binary_aki_no_glasses_data_start,
+    AKI_X + AKI_GLASSES_X, AKI_Y + AKI_GLASSES_Y // x, y
+  );
+
+  uart_puts(" Done!\r\n");
+}
+
+// Mascot
+
+#define MASCOT_X 510
+#define MASCOT_Y 280
+
+#define MASCOT_GLASSES_X 169
+#define MASCOT_GLASSES_Y 200
 
 extern const uint32_t _binary_mascot_data_start;
 
@@ -154,7 +215,7 @@ void draw_mascot() {
 
   draw_image(
     (uint32_t*) &_binary_mascot_data_start,
-    510, 280 // x, y
+    MASCOT_X, MASCOT_Y // x, y
   );
 
   uart_puts(" Done!\r\n");
@@ -167,24 +228,7 @@ void draw_glasses() {
 
   draw_image(
     (uint32_t*) &_binary_glasses_data_start,
-    510 + 169, 280 + 200 // x, y
-  );
-
-  uart_puts(" Done!\r\n");
-}
-
-extern const uint32_t _binary_logo_data_start;
-
-#define LOGO_WIDTH  168
-#define LOGO_HEIGHT 256
-
-void draw_logo() {
-  uart_puts("Drawing logo...");
-
-  draw_image(
-    (uint32_t*) &_binary_logo_data_start,
-    (FB_WIDTH / 2) - (LOGO_WIDTH / 2), // x pos
-    (FB_HEIGHT / 2) - (LOGO_HEIGHT / 2) // y pos
+    MASCOT_X + MASCOT_GLASSES_X, MASCOT_Y + MASCOT_GLASSES_Y // x, y
   );
 
   uart_puts(" Done!\r\n");

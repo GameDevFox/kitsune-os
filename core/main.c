@@ -404,7 +404,7 @@ void command_handler(char input) {
     case 's': do_enable_cache(); break;
     case 'd': process_device_tree(device_tree); break;
     // case 'f': print_vt_size(); break;
-    case 'g': draw_no_glasses(); break;
+    case 'g': draw_glasses(); break;
     case 'h': print_performance_counter(); break;
     case 'j': set_input_handler(raw_handler); break;
     // case 'k': vt_fill('X'); break;

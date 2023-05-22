@@ -6,8 +6,8 @@ import { BsBookmark } from 'react-icons/bs';
 import { ImArrowDown, ImArrowUp } from 'react-icons/im';
 
 import {
-  Box, Button, ButtonGroup, Center, Heading,
-  Icon, IconButton, Select, Stack, Tab, TabList,
+  Box, Button, ButtonGroup, Heading, Icon,
+  IconButton, Select, Stack, Tab, TabList,
   TabPanel, TabPanels, Tabs, useColorMode,
 } from '@chakra-ui/react';
 
@@ -69,8 +69,9 @@ function App() {
   };
 
   return (
-    <Box margin={2}>
-      <Stack>
+    <Stack direction="row">
+      <Box flexGrow={1}/>
+      <Stack width="1000px" padding={2}>
         <ButtonGroup>
           <Button onClick={toggleColorMode}>
             {_.capitalize(colorMode)}
@@ -84,8 +85,8 @@ function App() {
           <ColorPicker color={color} onChange={color => updateColor(color)}/>
 
           <Button onClick={() => draw('curve')}>Draw Curve</Button>
-          <Button onClick={() => draw('mascot')}>Draw Mascot w/ Glasses</Button>
-          <Button onClick={() => draw('mascot-no-glasses')}>Draw Mascot</Button>
+          <Button onClick={() => draw('mascot')}>Draw Mascot</Button>
+          <Button onClick={() => draw('mascot-with-glasses')}>Draw Mascot w/ Glasses</Button>
           <Button onClick={() => draw('logo')}>Draw Logo</Button>
           <Button onClick={() => draw('kitsune-text')}>Draw Kitsune Text</Button>
 
@@ -155,7 +156,8 @@ function App() {
           </Stack>
         </Stack>
       </Stack>
-    </Box>
+      <Box flexGrow={1}/>
+    </Stack>
   );
 }
 

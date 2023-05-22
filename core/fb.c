@@ -160,13 +160,13 @@ void draw_mascot() {
   uart_puts(" Done!\r\n");
 }
 
-extern const uint32_t _binary_no_glasses_data_start;
+extern const uint32_t _binary_glasses_data_start;
 
-void draw_no_glasses() {
-  uart_puts("Drawing no glasses...");
+void draw_glasses() {
+  uart_puts("Drawing glasses...");
 
   draw_image(
-    (uint32_t*) &_binary_no_glasses_data_start,
+    (uint32_t*) &_binary_glasses_data_start,
     510 + 169, 280 + 200 // x, y
   );
 

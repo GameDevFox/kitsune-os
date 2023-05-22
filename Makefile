@@ -27,7 +27,12 @@ CHARACTER_SHEET_OBJS = \
 	image/character-sheet-base.o \
 	image/character-sheet-micro.o \
 	image/character-sheet-nano.o
-IMAGE_OBJS = $(CHARACTER_SHEET_OBJS) image/aki.o image/logo.o image/mascot.o image/no-glasses.o
+
+IMAGE_OBJS = $(CHARACTER_SHEET_OBJS) \
+	image/logo.o \
+	image/mascot.o \
+	image/glasses.o \
+	image/aki.o
 
 COMMON_OBJS = $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS)
 
@@ -83,6 +88,9 @@ docker-make:
 ## Utils
 gdb:
 	$(PREFIX)gdb
+
+nm: $(ELF_KERNEL)
+	$(PREFIX)nm $(ELF_KERNEL)
 
 objdump: $(ELF_KERNEL)
 	$(PREFIX)objdump -D $(ELF_KERNEL)

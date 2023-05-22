@@ -4,7 +4,7 @@ import { Request } from './request';
 export const images = {
   curve: '7',
   mascot: '8',
-  'mascot-no-glasses': '8g',
+  'mascot-with-glasses': '8g',
   logo: '9',
   'kitsune-text': 'r',
 };

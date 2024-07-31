@@ -5,7 +5,10 @@ size_t live_fn();
 size_t live_instruction();
 size_t perf_test();
 size_t set_cpsr(uint32_t value);
+
+void cpsr_enable_irq();
 size_t toggle_irqs();
+
 uint32_t get_pmccntr();
 void enable_cache();
 void initial_register_values();

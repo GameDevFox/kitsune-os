@@ -17,4 +17,4 @@ struct DeviceTreeHeader {
   uint32_t struct_size;
 };
 
-void process_device_tree(void* device_tree);
+void parse_device_tree(struct DeviceTreeHeader* device_tree_header);

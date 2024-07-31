@@ -32,9 +32,12 @@ IMAGE_OBJS = $(CHARACTER_SHEET_OBJS) \
 	image/logo.o \
 	image/mascot.o \
 	image/glasses.o \
-	image/aki.o \
-	image/aki-glasses.o \
-	image/aki-no-glasses.o
+	image/aki/base.o \
+	image/aki/glasses.o \
+	image/aki/no-glasses.o \
+	image/aki/mouth0.o \
+	image/aki/mouth1.o \
+	image/aki/mouth2.o \
 
 COMMON_OBJS = $(BOOT_OBJS) $(CORE_OBJS) $(IMAGE_OBJS)
 
@@ -74,17 +77,16 @@ QEMU_OPTS = \
 	-global bcm2835-fb.pixo=0 \
 	-kernel $(QEMU_KERNEL)
 
-qemu: $(QEMU_KERNEL)
-	$(QEMU_ARM) $(QEMU_OPTS) -serial $(shell tty)
+ifneq ($(SUSPEND),)
+QEMU_OPTS += -S
+endif
 
-qemu-gdb: $(QEMU_KERNEL)
-	$(QEMU_ARM) -S -s $(QEMU_OPTS) -serial tcp:localhost:8081
+qemu: $(QEMU_KERNEL)
+	$(QEMU_ARM) -s $(QEMU_OPTS) -serial $(shell tty)
 
 qemu-tcp: $(QEMU_KERNEL)
-	$(QEMU_ARM) $(QEMU_OPTS) -serial tcp:localhost:8081
-
-qemu-gdb-tcp: $(QEMU_KERNEL)
-	$(QEMU_ARM) -S -s $(QEMU_OPTS) -serial tcp:localhost:8081
+	echo $(QEMU_OPTS)
+	$(QEMU_ARM) -s $(QEMU_OPTS) -serial tcp:localhost:8081
 
 docker-make:
 	docker build -t kitsune-os-make .

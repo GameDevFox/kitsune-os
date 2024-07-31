@@ -7,19 +7,7 @@
 
 extern int raspi;
 
-extern uint32_t mmio_base;
-
 #define ONE "#1"
-
-// Memory-Mapped I/O output
-__eden static void mmio_write(uint32_t reg, uint32_t data) {
-  write(mmio_base + reg, data);
-}
-
-// Memory-Mapped I/O input
-__eden static uint32_t mmio_read(uint32_t reg) {
-  return read(mmio_base + reg);
-}
 
 // Loop <delay> times in a way that the compiler won't optimize away
 static void delay(uint32_t count) {

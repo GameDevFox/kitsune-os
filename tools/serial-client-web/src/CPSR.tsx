@@ -7,12 +7,12 @@ import { readCPSR, writeCPSR } from "./api";
 import { fields } from "./cspr-fields";
 import { useFieldDescription } from "./useFieldDescription";
 
-import { Bits } from "./coproc-registers/Bits";
+import { Bits } from "./CoprocRegisters/Bits";
 
 export const CPSR = () => {
   const [value, setValue] = useState<number[]>([0, 0, 0, 0]);
 
-  const { fieldDescription, selectField } = useFieldDescription(fields, value, setValue);
+  const { FieldDescription, selectField } = useFieldDescription(fields, value, setValue);
 
   const loadCPSR = () => {
     readCPSR().then(result => {
@@ -40,7 +40,7 @@ export const CPSR = () => {
         onClickField={field => selectField(field.startBit)}
       />
 
-      {fieldDescription}
+      {FieldDescription}
     </>
   );
 }

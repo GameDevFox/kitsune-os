@@ -1,9 +1,16 @@
 // REGISTER_NAME: [coproc, opcode1, CRn, CRm, opcode2]
 
+// Ex.
+// SCTLR - p15, 0, <Rt>, c1, c0, 1;
+
 import { CoprocRegister, Field } from "./types";
 
-import { sctlr } from "./coprocs/sctlr";
 import { id_pfr0 } from "./coprocs/id_pfr0";
+import { id_mmfr0 } from "./coprocs/id_mmfr0";
+import { id_mmfr3 } from "./coprocs/id_mmfr3";
+import { midr } from "./coprocs/midr";
+import { sctlr } from "./coprocs/sctlr";
+import { ttbcr } from "./coprocs/ttbcr";
 
 // CR = coprocessor register
 
@@ -287,11 +294,7 @@ export const coprocRegisterCodes: Record<string, CoprocRegister> = {
     isReadable: true,
     isWriteable: false,
   },
-  "ID_MMFR0": {
-    args: [15,0,0,1,4],
-    isReadable: true,
-    isWriteable: false,
-  },
+  "ID_MMFR0": id_mmfr0,
   "ID_MMFR1": {
     args: [15,0,0,1,5],
     isReadable: true,
@@ -302,11 +305,7 @@ export const coprocRegisterCodes: Record<string, CoprocRegister> = {
     isReadable: true,
     isWriteable: false,
   },
-  "ID_MMFR3": {
-    args: [15,0,0,1,7],
-    isReadable: true,
-    isWriteable: false,
-  },
+  "ID_MMFR3": id_mmfr3,
   "ID_PFR0": id_pfr0,
   "ID_PFR1": {
     args: [15,0,0,1,1],
@@ -348,11 +347,7 @@ export const coprocRegisterCodes: Record<string, CoprocRegister> = {
     isReadable: false,
     isWriteable: true,
   },
-  "MIDR": {
-    args: [15,0,0,0,0],
-    isReadable: true,
-    isWriteable: false,
-  },
+  "MIDR": midr,
   "MPIDR": {
     args: [15,0,0,0,5],
     isReadable: true,
@@ -504,11 +499,7 @@ export const coprocRegisterCodes: Record<string, CoprocRegister> = {
     isReadable: true,
     isWriteable: true,
   },
-  "TTBCR": {
-    args: [15,0,2,0,2],
-    isReadable: true,
-    isWriteable: true,
-  },
+  "TTBCR": ttbcr,
   "TTBR0": {
     args: [15,0,2,0,0],
     isReadable: true,

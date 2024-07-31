@@ -10,6 +10,7 @@
 #include "fb.h"
 #include "gic.h"
 #include "input.h"
+#include "mem.h"
 #include "output.h"
 #include "section.h"
 #include "serial-protocol.h"
@@ -81,7 +82,7 @@ __eden void write_memory() {
     sp_write((char*) start, length);
   );
 
-  uart_puts(" Done!" EOL);
+  uart_puts("Writing Bytes Done!" EOL);
 }
 
 int run_loop = 1;
@@ -265,7 +266,12 @@ extern const uint32_t _binary_character_sheet_nano_data_start[];
 void draw_kitsune_text() {
   uint32_t str_width = 32 * 7; // 32 pixels per char
   uint32_t str_x =  (FB_WIDTH / 2)  - (str_width / 2);
-  draw_string_animated("KITSUNE", base_font, str_x, 690, 0);
+
+  draw_string_animated(
+    "KITSUNE", base_font,
+    str_x, 690,
+    0, 0
+  );
 }
 
 void draw_mascot_text() {
@@ -380,7 +386,7 @@ void raw_handler(char c) {
   uart_putc(' ');
 }
 
-void* device_tree = 0;
+struct DeviceTreeHeader* device_tree_header = 0;
 
 void command_handler(char input) {
   switch(input) {
@@ -400,9 +406,12 @@ void command_handler(char input) {
 
     case '!': call_instruction(binary_entry, 0); break;
     case '@': disable_polling(); break;
-    case '#': draw_aki(); break;
+    case '#': draw_aki_base(); break;
     case '$': draw_aki_glasses(); break;
     case '%': draw_aki_no_glasses(); break;
+    case '^': draw_aki_mouth0(); break;
+    case '&': draw_aki_mouth1(); break;
+    case '*': draw_aki_mouth2(); break;
     case '=': binary_entry_mode(); break;
 
     case 'q': do_toggle_irq(); break;
@@ -414,7 +423,7 @@ void command_handler(char input) {
 
     case 'a': uart_puts(VT_SAVE VT_HOME VT_RED "Red Text" EOL VT_DEFAULT VT_LOAD); break;
     case 's': do_enable_cache(); break;
-    case 'd': process_device_tree(device_tree); break;
+    case 'd': parse_device_tree(device_tree_header); break;
     // case 'f': print_vt_size(); break;
     case 'g': draw_glasses(); break;
     case 'h': print_performance_counter(); break;
@@ -528,7 +537,7 @@ void main(uint32_t r0, uint32_t r1, uint32_t atags)
 
   print_params(r0, r1, atags);
 
-  device_tree = (void*) atags;
+  device_tree_header = (struct DeviceTreeHeader*) atags;
 
   fb_test_2();
   draw_logo();

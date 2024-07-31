@@ -3,7 +3,15 @@ export interface Value {
   description: string;
 };
 
-export type AltCode = 'RAO' | 'RAZ' | 'SBO' | 'SBOP' | 'SBZP' | 'SBZ' | 'UNK' | 'WI';
+export type AltCode =
+  'RAO' |   // Read As One
+  'RAZ' |   // Read As Zero
+  'SBO' |   // Should Be One
+  'SBOP' |  // Should Be One or Preserved
+  'SBZ' |   // Should Be Zero
+  'SBZP' |  // Should Be Zero or Preserved
+  'UNK' |   // Unknown
+  'WI';     // Writes Ignored
 
 export interface Field {
   startBit: number;

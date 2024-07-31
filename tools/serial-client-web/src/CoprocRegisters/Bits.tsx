@@ -6,7 +6,7 @@ import {
   Field, getBit, getByteIndex, getFieldForBit, setBit
 } from "@kitsune-os/common";
 
-import { TdCompact as Td } from './TdCompact';
+import { TdCompact as Td } from '../TdCompact';
 
 type Value = number[];
 

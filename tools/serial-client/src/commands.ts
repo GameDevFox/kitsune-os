@@ -56,9 +56,9 @@ export const WriteCommand = (
 };
 
 export interface Color {
-  r: number,
-  g: number,
-  b: number,
+  r: number;
+  g: number;
+  b: number;
 }
 
 export const SetColorBuffer = (color: Color) => {

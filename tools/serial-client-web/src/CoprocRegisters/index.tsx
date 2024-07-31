@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { Select } from 'chakra-react-select';
 
-import { Box, Button, Input, Select, Stack } from "@chakra-ui/react";
+import { Box, Button, Input, Stack } from "@chakra-ui/react";
 import { bytesToStr, CoprocRegister } from '@kitsune-os/common';
 
 import { listCoprocRegs, readCoprocReg, writeCoprocReg } from "../api";
@@ -24,7 +25,8 @@ export const CoprocRegisters = () => {
   const coprocRegister = coprocRegisters[name];
   const { fields, isReadable, isWriteable } = coprocRegister || {};
 
-  const { fieldDescription, selectField } = useFieldDescription(fields || [], value, setValue);
+  // Make FieldDescription a component that props are passed into
+  const { FieldDescription, selectField } = useFieldDescription(fields || [], value, setValue);
 
   const valueStr = bytesToStr(value);
 
@@ -47,15 +49,19 @@ export const CoprocRegisters = () => {
   return (
     <Box>
       <Stack direction='row'>
-        <Select maxWidth='200px'
-          value={name}
-          onChange={e => setName(e.currentTarget.value)}
-        >
-          <option value=''></option>
-          {Object.keys(coprocRegisters).map(name => (
-            <option key={name} value={name}>{name}</option>
-          ))}
-        </Select>
+        <Select
+          useBasicStyles
+          chakraStyles={{ container: provided => ({ ...provided, width: 180 }) }}
+
+          options={Object.entries(coprocRegisters).map(([name, value]) => {
+            const { args } = value;
+
+            const asmArgs = `p${args[0]}, ${args[1]}, <Rt>, c${args[2]}, c${args[3]}, ${args[4]}`;
+            const fullName = `${name} - ${asmArgs}`;
+            return { label: fullName, value: name };
+          })}
+          onChange={e => setName(e?.value || '')}
+        />
 
         <Button disabled={!isReadable} onClick={readCoproc}>Read</Button>
         <pre><Input readOnly value={valueStr}/></pre>
@@ -70,7 +76,7 @@ export const CoprocRegisters = () => {
         onClickField={field => selectField(field.startBit)}
       />
 
-      {fieldDescription}
+      {FieldDescription}
     </Box>
   );
 };

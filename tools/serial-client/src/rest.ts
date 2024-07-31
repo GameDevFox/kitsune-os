@@ -44,6 +44,16 @@ export const buildRestApp = (
     });
   });
 
+  app.post("/memory/:start", (req, res) => {
+    const start = Number(req.params.start);
+    const data = req.body.data;
+
+    api.writeMemory(start, data, data => {
+      res.send({ success: true, data });
+    });
+  });
+
+
   app.get("/coproc-registers", (req, res) => {
     res.send({ success: true, registers: coprocRegisterCodes });
   });

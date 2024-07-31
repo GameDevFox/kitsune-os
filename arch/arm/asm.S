@@ -247,6 +247,13 @@ set_mode:
 	msr cpsr_c, r0
 	bx lr
 
+.global cpsr_enable_irq
+cpsr_enable_irq:
+	mrs r0, cpsr
+	bic r0, #CPSR_DISABLE_IRQ_MASK
+	msr cpsr, r0
+	bx lr
+
 .global toggle_irqs
 toggle_irqs:
 	push {lr}

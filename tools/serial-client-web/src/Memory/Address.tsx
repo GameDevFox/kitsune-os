@@ -37,7 +37,7 @@ export const Address = (props: AddressProps) => {
   return (
     <>
       <InputGroup>
-        <InputLeftAddon paddingInlineEnd='1'>Address: 0x</InputLeftAddon>
+        <InputLeftAddon paddingInlineEnd='1'>Address 0x</InputLeftAddon>
         <Input
           paddingInlineStart='1'
           type='input' value={addressInput}
@@ -50,7 +50,7 @@ export const Address = (props: AddressProps) => {
       </InputGroup>
 
       <InputGroup>
-        <InputLeftAddon paddingInlineEnd='1'>Offset: 0x</InputLeftAddon>
+        <InputLeftAddon paddingInlineEnd='1'>Offset 0x</InputLeftAddon>
         <Input
           paddingInlineStart='1'
           type='input' value={offsetInput}
@@ -68,7 +68,7 @@ export const Address = (props: AddressProps) => {
         </InputRightElement>
       </InputGroup>
 
-      <Button onClick={updateAddress}>Go</Button>
+      <Button onClick={() => { updateAddress(); updateOffset(); }}>Go</Button>
     </>
   );
 };

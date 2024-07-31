@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { Field, getValueByBits, setBit } from "@kitsune-os/common";
-import { FieldDescription } from "./coproc-registers/FieldDescription";
+import { FieldDescription } from "./CoprocRegisters/FieldDescription";
 
 export const useFieldDescription = (fields: Field[], value: number[], setValue: (value: number[]) => void) => {
   const [selected, setSelected] = useState<number | undefined>();
@@ -34,5 +34,5 @@ export const useFieldDescription = (fields: Field[], value: number[], setValue: 
     }
   }
 
-  return { fieldDescription, selectField: setSelected };
+  return { FieldDescription: fieldDescription, selectField: setSelected };
 };

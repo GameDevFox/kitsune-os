@@ -79,6 +79,8 @@ void clear_pixels(
   }
 }
 
+// TODO: Make a wrapper function that clips the bounds of the
+// render to the screen boundaries (0 < x < FB_WIDTH, same for y)
 // TODO: Look over this again and see if we can simplify the math
 void draw_image_base(
   const uint32_t* image_data,
@@ -94,7 +96,15 @@ void draw_image_base(
 
   image_data += src_y * src_width;
 
-  for(uint32_t y = src_y; y < src_height && y < src_y + dest_height && y < FB_HEIGHT; y++) {
+  for(
+    uint32_t y = src_y;
+    (
+      y < src_height &&
+      y < src_y + dest_height &&
+      y - src_y + dest_y < FB_HEIGHT
+    );
+    y++
+  ) {
     image_data += src_x;
 
     for(uint32_t x = src_x; x < src_width && x < src_x + dest_width && x < FB_WIDTH; x++) {
@@ -153,52 +163,35 @@ void draw_logo() {
   uart_puts(" Done!\r\n");
 }
 
+#define DRAW_IMAGE(NAME, X, Y) \
+extern const uint32_t _binary_ ## NAME ## _data_start; \
+\
+void draw_ ## NAME() { \
+  draw_image( \
+    (uint32_t*) &_binary_ ## NAME ## _data_start, \
+    X, Y \
+  ); \
+} \
+
 // Aki
 
-#define AKI_X 980
-#define AKI_Y 50
+#define AKI_X 1100
+#define AKI_Y 100
 
-#define AKI_GLASSES_X 422
-#define AKI_GLASSES_Y 218
+DRAW_IMAGE(aki_base, AKI_X, AKI_Y)
 
-extern const uint32_t _binary_aki_data_start;
+#define AKI_GLASSES_X 308
+#define AKI_GLASSES_Y 172
 
-void draw_aki() {
-  uart_puts("Drawing Aki-chan...");
+DRAW_IMAGE(aki_glasses, AKI_X + AKI_GLASSES_X, AKI_Y + AKI_GLASSES_Y)
+DRAW_IMAGE(aki_no_glasses, AKI_X + AKI_GLASSES_X, AKI_Y + AKI_GLASSES_Y)
 
-  draw_image(
-    (uint32_t*) &_binary_aki_data_start,
-    AKI_X, AKI_Y // x, y
-  );
+#define AKI_MOUTH_X 368
+#define AKI_MOUTH_Y 220
 
-  uart_puts(" Done!\r\n");
-}
-
-extern const uint32_t _binary_aki_glasses_data_start;
-
-void draw_aki_glasses() {
-  uart_puts("Drawing Aki glasses...");
-
-  draw_image(
-    (uint32_t*) &_binary_aki_glasses_data_start,
-    AKI_X + AKI_GLASSES_X, AKI_Y + AKI_GLASSES_Y // x, y
-  );
-
-  uart_puts(" Done!\r\n");
-}
-
-extern const uint32_t _binary_aki_no_glasses_data_start;
-
-void draw_aki_no_glasses() {
-  uart_puts("Drawing Aki without glasses...");
-
-  draw_image(
-    (uint32_t*) &_binary_aki_no_glasses_data_start,
-    AKI_X + AKI_GLASSES_X, AKI_Y + AKI_GLASSES_Y // x, y
-  );
-
-  uart_puts(" Done!\r\n");
-}
+DRAW_IMAGE(aki_mouth0, AKI_X + AKI_MOUTH_X, AKI_Y + AKI_MOUTH_Y)
+DRAW_IMAGE(aki_mouth1, AKI_X + AKI_MOUTH_X, AKI_Y + AKI_MOUTH_Y)
+DRAW_IMAGE(aki_mouth2, AKI_X + AKI_MOUTH_X, AKI_Y + AKI_MOUTH_Y)
 
 // Mascot
 
@@ -275,7 +268,20 @@ void draw_string(char* str, const uint32_t* font, uint32_t x, uint32_t y) {
   }
 }
 
-void draw_string_animated(char* str, const uint32_t* font, uint32_t x, uint32_t y, uint32_t delay_count) {
+void (*draw_mouths[])(void) = {
+  draw_aki_mouth1,
+  draw_aki_mouth2,
+  draw_aki_mouth1,
+  draw_aki_mouth0,
+};
+
+#define MOUTHS_LENGTH (sizeof(draw_mouths) / sizeof(draw_mouths[0]))
+
+void draw_string_animated(
+  char* str, const uint32_t* font,
+  uint32_t x, uint32_t y,
+  uint32_t delay_count, uint32_t mouth_delay
+) {
   if(delay_count == 0)
     delay_count = 100000;
 
@@ -284,18 +290,34 @@ void draw_string_animated(char* str, const uint32_t* font, uint32_t x, uint32_t 
 
   uint32_t char_height = src_height / 8;
 
+  uint32_t delay_counter = 0;
+
   uint32_t my_x = x;
   for(int i=0; str[i] != 0; i++) {
     char c = str[i];
+    if(c == ' ')
+      goto end;
+
     if(c == '\n') {
       my_x = x;
       y += char_height;
       continue;
     }
 
+    if(mouth_delay != 0) {
+      uint32_t mouth_index = delay_counter / mouth_delay;
+      void (*draw_mouth)(void) = draw_mouths[mouth_index % MOUTHS_LENGTH];
+      draw_mouth();
+      delay_counter += delay_count;
+    }
+
     draw_char(c, font, my_x, y);
     delay(delay_count);
 
+    end:;
     my_x += src_width / 16;
   }
+
+  if(mouth_delay != 0)
+    draw_aki_mouth0();
 }

@@ -15,7 +15,7 @@ void sp_puts(char* str);
 void sp_write(char* str, uint32_t count);
 void sp_log(char* str);
 
-#define sp_frame(BODY) \
-  sp_start(); \
-  BODY \
+#define sp_frame(BODY)\
+  sp_start();\
+  BODY\
   sp_end();

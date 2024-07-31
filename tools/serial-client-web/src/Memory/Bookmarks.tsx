@@ -19,7 +19,7 @@ export const Bookmarks = (props: BookmarksProps) => {
     value,
     selected,
     onClick = () => {},
-    onDelete = (index: number) => {},
+    onDelete = () => {},
   } = props;
 
   return (

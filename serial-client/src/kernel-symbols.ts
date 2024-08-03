@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import { exitCode } from 'process';
 
 export const loadSymbols = () => new Promise<Record<string, number>>((resolve, reject) => {
-  const kernelPath = `${__dirname}/../../../kitsune-qemu.elf`;
+  const kernelPath = `${__dirname}/../../kernel/kitsune-qemu.elf`;
 
   const proc = spawn('nm', [kernelPath]);
 
@@ -13,7 +13,7 @@ export const loadSymbols = () => new Promise<Record<string, number>>((resolve, r
 
   proc.on('exit', () => {
     if(proc.exitCode !== 0) {
-      reject(`Failed to load symbols. Exit Code: ${exitCode}`);
+      reject(`Failed to load symbols. Exit Code: ${exitCode}.`);
       return;
     }
 
@@ -30,5 +30,4 @@ export const loadSymbols = () => new Promise<Record<string, number>>((resolve, r
 
     resolve(result);
   });
-
 });

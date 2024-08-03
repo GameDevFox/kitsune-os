@@ -112,7 +112,7 @@ irq_exception:
 	// Get Interrupt ID
 	mov r1, #0x200c
 	movt r1, #0xff84
-	ldr r0, [r1]
+	@ ldr r0, [r1]
 
 	mov r4, r0
 
@@ -124,7 +124,7 @@ irq_exception:
 	mov r1, #0x2010
 	movt r1, #0xff84
 	mov r0, r4
-	str r0, [r1]
+	@ str r0, [r1]
 
 	print(end_irq_str)
 

@@ -93,6 +93,10 @@ enter_kernel:
   // Pop the three registers (r0, r1, r2) we pushed earlier
   pop {r0-r2}
 
+  // GDB Trap
+// 3:
+//   b 3b
+
   // Call main
   ldr r3, =main
   blx r3

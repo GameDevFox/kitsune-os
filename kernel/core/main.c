@@ -64,11 +64,11 @@ __eden void write_memory() {
   size_t start = uart_getw();
   size_t length = uart_getw();
 
-  uart_puts("Writing ");
-  word_to_hex(length, uart_putc);
-  uart_puts(" bytes to ");
-  word_to_hex(start, uart_putc);
-  uart_puts(" ...");
+  // uart_puts("Writing ");
+  // word_to_hex(length, uart_putc);
+  // uart_puts(" bytes to ");
+  // word_to_hex(start, uart_putc);
+  // uart_puts(" ...");
 
   size_t end = start + length;
 
@@ -275,11 +275,28 @@ void draw_kitsune_text() {
 }
 
 void draw_mascot_text() {
+  // char* mascot_text_str =
+  //   "Master, you're back!\n"
+  //   "How may we serve you today?\n"
+  //   "*smile*";
+  // draw_string_animated(
+  //   mascot_text_str, micro_font,
+  //   400, 220,
+  //   50000, 100000
+  // );
+
+  // delay(800000);
+
   char* mascot_text_str =
-    "Welcome to Kitsune!\n"
-    "Let's learn and have\n"
-    "fun together.";
-  draw_string_animated(mascot_text_str, micro_font, 1000, 180, 50000);
+    "        Hey Shizuko!\n"
+    "Thank you for my new\n"
+    "    mouth animation.\n"
+    "          I love it!";
+  draw_string_animated(
+    mascot_text_str, micro_font,
+    1000, 180,
+    50000, 100000
+  );
 }
 
 char uptime_str[16];
@@ -538,20 +555,44 @@ void main(uint32_t r0, uint32_t r1, uint32_t atags)
   print_params(r0, r1, atags);
 
   device_tree_header = (struct DeviceTreeHeader*) atags;
+  // parse_device_tree(device_tree_header);
+
+  delay(2000000);
 
   fb_test_2();
   draw_logo();
 
-  draw_aki();
+  draw_aki_base();
 
   delay(1000000);
 
   draw_kitsune_text();
   draw_mascot_text();
+  draw_aki_mouth2();
 
   draw_clock(0, 0, 0);
 
   uart_puts(EOL "READY" EOL);
+
+  // cpsr_enable_irq();
+
+  // write(0x3c100000 + 0x10000, 0x12345678);
+  // write(0x3f00b210, 0x0000000f);
+
+  // in_3_seconds();
+
+  uint32_t* address = (uint32_t*)0x01000000;
+  uint32_t  record  = 0x00040c02;
+
+  // Setup MMU translation table
+  for(unsigned int i=0; i<256; i++) { // Supersection
+    for(unsigned int j=0; j<16; j++) { // Repeat supersection records 16 times
+      *address = record;
+      address++;
+    }
+
+    record += 0x01000000;
+  }
 
   input_loop();
 }

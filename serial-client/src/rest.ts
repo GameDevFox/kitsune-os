@@ -1,6 +1,8 @@
+import express from 'express';
+require('express-async-errors');
+
 import { json } from 'body-parser';
 import cors from 'cors';
-import express from 'express';
 
 import { coprocRegisterCodes } from '@kitsune-os/common';
 

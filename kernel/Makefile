@@ -93,22 +93,26 @@ docker-make:
 	docker run -v "$(PWD)":/kitsune-os kitsune-os-make
 
 ## Utils
+.PHONY: gdb
 gdb:
 	$(PREFIX)gdb
 
+.PHONY: nm
 nm: $(ELF_KERNEL)
 	$(PREFIX)nm $(ELF_KERNEL)
 
+.PHONY: objdump
 objdump: $(ELF_KERNEL)
 	$(PREFIX)objdump -D $(ELF_KERNEL)
 
+.PHONY: readelf
 readelf: $(ELF_KERNEL)
 	$(PREFIX)readelf --all --wide $(ELF_KERNEL)
 
 ## Tools
+.PHONY: tools
 tools:
 	make -C tools
-.PHONY: tools
 
 # kitsune64: linker.ld raspi34-boot.o kernel64.o
 # 	aarch64-elf-gcc -T linker.ld -o $(ELF_KERNEL) -ffreestanding -O2 -nostdlib raspi34-boot.o kernel64.o -lgcc

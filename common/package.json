@@ -2,7 +2,7 @@
   "name": "@kitsune-os/common",
   "version": "1.0.0",
   "main": "dist/index.js",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsc"

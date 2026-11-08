@@ -1,0 +1,15 @@
+[build]
+# Softfloat: compiled code must not touch FP/SIMD registers, which trap until
+# the kernel enables them and would have to be saved on every context switch.
+target = "aarch64-unknown-none-softfloat"
+
+[alias]
+pi = "run --quiet --package pi --target host-tuple --"
+# In release, as it handles every byte of the video. Debug used over 3 times the CPU.
+server = "run --quiet --release --package server --target host-tuple --"
+uart = "run --quiet --package uart --target host-tuple --"
+upload = "run --quiet --package upload --target host-tuple --"
+
+[target.aarch64-unknown-none-softfloat]
+# Cargo appends the kernel's path, so -kernel must stay last.
+runner = "qemu-system-aarch64 -M raspi4b -display none -monitor none -serial stdio -kernel"

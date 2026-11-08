@@ -1,0 +1,26 @@
+#!/bin/bash
+# Tests the video page in a throwaway headless browser, and its sound player in Node.
+# None of these can reach the Pi:
+# keys.mjs stubs out the network, and reload.mjs serves the page itself.
+# PAGE_HTML can point at another copy of the page, such as a mutated one.
+HERE="$(cd "$(dirname "$0")" && pwd)"
+PORT=9333
+WORK="$(mktemp -d)"
+# Without --password-store=basic, Chromium waits on KDE Wallet and navigation hangs.
+chromium --headless=new --disable-gpu --no-first-run --password-store=basic --user-data-dir="$WORK/profile" \
+  --remote-debugging-port="$PORT" --remote-debugging-address=127.0.0.1 about:blank >"$WORK/chromium.log" 2>&1 &
+BROWSER=$!
+finish() { kill "$BROWSER" 2>/dev/null; wait "$BROWSER" 2>/dev/null; rm -rf "$WORK"; }
+trap finish EXIT
+ready=""
+for _ in $(seq 1 60); do
+  kill -0 "$BROWSER" 2>/dev/null || { echo "the browser died:"; tail -5 "$WORK/chromium.log"; exit 1; }
+  if curl -s -m 1 "http://127.0.0.1:$PORT/json/version" >/dev/null; then ready=1; break; fi
+  sleep 0.25
+done
+[ -n "$ready" ] || { echo "the browser never became ready"; exit 1; }
+timeout 60 node "$HERE/keys.mjs" "$PORT" "$WORK"; keys=$?
+timeout 90 node "$HERE/reload.mjs" "$PORT"; reload=$?
+timeout 30 node --test "$HERE/sound.mjs"; sound=$?
+echo "keys exit $keys, reload exit $reload, sound exit $sound"
+[ "$keys" -eq 0 ] && [ "$reload" -eq 0 ] && [ "$sound" -eq 0 ]

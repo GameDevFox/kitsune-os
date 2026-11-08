@@ -1,0 +1,21 @@
+[package]
+name = "kernel"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+
+[[bin]]
+name = "kernel"
+path = "src/main.rs"
+test = false
+bench = false
+
+[dependencies]
+device_tree = { path = "../device_tree" }
+fat = { path = "../fat" }
+protocol = { path = "../protocol" }
+
+# The kernel does not use floating point. See clippy.toml for the banned types.
+[lints.clippy]
+disallowed_types = "deny"
+float_arithmetic = "deny"

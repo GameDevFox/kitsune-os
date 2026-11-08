@@ -1,0 +1,1 @@
+disallowed-types = ["f32", "f64"]

@@ -4,7 +4,7 @@ import { Button, Input, Stack } from "@chakra-ui/react";
 import { bytesToStr } from "@kitsune-os/common";
 
 import { readCPSR, writeCPSR } from "./api";
-import { fields } from "./cspr-fields";
+import { fields } from "./cpsr-fields";
 import { useFieldDescription } from "./useFieldDescription";
 
 import { Bits } from "./CoprocRegisters/Bits";
@@ -20,9 +20,7 @@ export const CPSR = () => {
     });
   };
 
-  const saveCPSR = () => {
-    writeCPSR(value);
-  };
+  const saveCPSR = () => writeCPSR(value);
 
   return (
     <>

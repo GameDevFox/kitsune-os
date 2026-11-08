@@ -97,7 +97,7 @@ void backspace() {
 
 void print_timer() {
   uint32_t t = read_timer();
-  uint32_t p = get_pmccntr();
+  uint32_t p = get_performance_counter();
   word_to_hex(t, uart_putc);
   uart_puts(EOL);
   word_to_hex(p, uart_putc);
@@ -535,6 +535,20 @@ void print_params(uint32_t r0, uint32_t r1, uint32_t atags) {
   uart_puts(EOL);
 }
 
+void setup_mmu_translation_table() {
+  uint32_t* address = (uint32_t*)0x01000000;
+  uint32_t  record  = 0x00040c02;
+
+  for(unsigned int i=0; i<256; i++) { // Supersection
+    for(unsigned int j=0; j<16; j++) { // Repeat supersection records 16 times
+      *address = record;
+      address++;
+    }
+
+    record += 0x01000000;
+  }
+}
+
 #if defined(__cplusplus)
 extern "C" /* Use C linkage for main. */
 #endif
@@ -557,7 +571,9 @@ void main(uint32_t r0, uint32_t r1, uint32_t atags)
   device_tree_header = (struct DeviceTreeHeader*) atags;
   // parse_device_tree(device_tree_header);
 
-  delay(2000000);
+  setup_mmu_translation_table();
+
+  // delay(2000000);
 
   fb_test_2();
   draw_logo();
@@ -580,19 +596,6 @@ void main(uint32_t r0, uint32_t r1, uint32_t atags)
   // write(0x3f00b210, 0x0000000f);
 
   // in_3_seconds();
-
-  uint32_t* address = (uint32_t*)0x01000000;
-  uint32_t  record  = 0x00040c02;
-
-  // Setup MMU translation table
-  for(unsigned int i=0; i<256; i++) { // Supersection
-    for(unsigned int j=0; j<16; j++) { // Repeat supersection records 16 times
-      *address = record;
-      address++;
-    }
-
-    record += 0x01000000;
-  }
 
   input_loop();
 }

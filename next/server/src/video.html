@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Kitsune OS: HDMI</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; color: #ddd; font: 14px monospace; overflow: hidden; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+  #help { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-height: 90%; overflow: auto; padding: 16px 20px; background: rgba(0, 0, 0, 0.88); border: 1px solid #555; border-radius: 6px; }
+  #help[hidden] { display: none; }
+  #help h2 { margin: 12px 0 6px; font-size: 14px; color: #fa6; }
+  #help h2:first-child { margin-top: 0; }
+  #help table { border-collapse: collapse; }
+  #help td { padding: 2px 12px 2px 0; }
+  #help td:first-child { color: #fa6; white-space: nowrap; }
+  #buttons, #readout { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  button { font: inherit; color: #ddd; background: #333; border: 1px solid #666; border-radius: 3px; padding: 2px 8px; cursor: pointer; }
+  button.on { background: #a40; }
+  #swatch { display: inline-block; width: 14px; height: 14px; border: 1px solid #888; }
+  #notice { position: absolute; left: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 2px; pointer-events: none; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+  #notice span:empty { display: none; }
+  #hint { position: absolute; right: 8px; bottom: 8px; color: #999; pointer-events: none; transition: opacity 1s; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+  #hint.gone { opacity: 0; }
+</style>
+<canvas id="screen"></canvas>
+<div id="notice">
+  <span id="status"></span>
+  <span id="sent"></span>
+</div>
+<div id="hint">? for controls</div>
+<div id="help" hidden>
+  <h2>View</h2>
+  <div id="buttons">
+    <button id="out">-</button>
+    <button id="in">+</button>
+    <button id="fit">Fit</button>
+    <button id="actual">1:1</button>
+    <button id="pause">Pause</button>
+  </div>
+  <table>
+    <tr><td>+ and -, or the wheel</td><td>Zoom</td></tr>
+    <tr><td>Drag</td><td>Pan</td></tr>
+    <tr><td>z</td><td>Fit the screen</td></tr>
+    <tr><td>a</td><td>One screen pixel per image pixel</td></tr>
+    <tr><td>Space</td><td>Hold this frame</td></tr>
+    <tr><td>f</td><td>Fullscreen</td></tr>
+    <tr><td>s</td><td>Hear the Pi's headphone jack, through this PC's line-in. Again to stop</td></tr>
+    <tr><td>?</td><td>Show or hide this</td></tr>
+  </table>
+  <h2>Sent to the Pi</h2>
+  <table>
+    <tr><td>Click or m</td><td>Move the Pi's cursor with your mouse. Esc gives it back</td></tr>
+    <tr><td>1</td><td>Draw the original Aki</td></tr>
+    <tr><td>2, 3, 4</td><td>Draw her at x1, x2, x4</td></tr>
+    <tr><td>5</td><td>Spin a cube with the CPU</td></tr>
+    <tr><td>6</td><td>Spin a cube with the GPU</td></tr>
+    <tr><td>7</td><td>Play a test tone from the headphone jack, higher on the left. Turns sound on</td></tr>
+    <tr><td>8</td><td>Play the voice clip that <code>tools/voice.py</code> loaded. Turns sound on</td></tr>
+    <tr><td>9</td><td>Print the device tree over serial, which takes several seconds</td></tr>
+    <tr><td>0</td><td>Clear the screen</td></tr>
+    <tr><td>c</td><td>Run the drivers' checks, about 1.6 s, with results over serial</td></tr>
+  </table>
+  <h2>Stream</h2>
+  <div id="rate">measuring</div>
+  <h2>Pixel</h2>
+  <div id="readout">
+    <span id="zoom"></span>
+    <span id="swatch"></span>
+    <span id="pixel">hover over a pixel</span>
+  </div>
+</div>
+<script>
+"use strict";
+const WIDTH = 1920, HEIGHT = 1080;
+const MIN_ZOOM = 0.1, MAX_ZOOM = 64, ZOOM_STEP = 2, WHEEL_STEP = 1.25;
+// A grid only helps once pixels are big enough to tell apart.
+const GRID_FROM_ZOOM = 8;
+const RETRY_MS = 500;
+
+const screen = document.getElementById("screen");
+const context = screen.getContext("2d", { alpha: false });
+// One pixel, for reading the color under the pointer, so that frames need no second copy.
+const probe = document.createElement("canvas");
+probe.width = 1;
+probe.height = 1;
+const probeContext = probe.getContext("2d", { willReadFrequently: true });
+const element = (id) => document.getElementById(id);
+
+// Screen position of the image's top-left corner, and screen pixels per image pixel.
+let zoom = 1, left = 0, top_ = 0;
+let paused = false;
+let hover = null;
+
+const clampZoom = (value) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
+
+function resize() {
+  const scale = window.devicePixelRatio || 1;
+  screen.width = Math.round(window.innerWidth * scale);
+  screen.height = Math.round(window.innerHeight * scale);
+  draw();
+}
+
+const cssToScreen = (value) => value * (screen.width / window.innerWidth);
+
+function fit() {
+  zoom = Math.min(screen.width / WIDTH, screen.height / HEIGHT);
+  left = (screen.width - WIDTH * zoom) / 2;
+  top_ = (screen.height - HEIGHT * zoom) / 2;
+  draw();
+}
+
+/** Zooms, keeping the image pixel under a screen position in place. */
+function zoomAt(factor, x, y) {
+  const next = clampZoom(zoom * factor);
+  left = x - (x - left) * next / zoom;
+  top_ = y - (y - top_) * next / zoom;
+  zoom = next;
+  draw();
+}
+
+const zoomCenter = (factor) => zoomAt(factor, screen.width / 2, screen.height / 2);
+
+function draw() {
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.fillStyle = "#000";
+  context.fillRect(0, 0, screen.width, screen.height);
+  context.imageSmoothingEnabled = false;
+  if (current) {
+    context.drawImage(current, left, top_, WIDTH * zoom, HEIGHT * zoom);
+  }
+
+  if (zoom >= GRID_FROM_ZOOM) {
+    context.strokeStyle = "#ffffff30";
+    context.lineWidth = 1;
+    context.beginPath();
+    const firstX = Math.max(0, Math.floor(-left / zoom));
+    const lastX = Math.min(WIDTH, Math.ceil((screen.width - left) / zoom));
+    const firstY = Math.max(0, Math.floor(-top_ / zoom));
+    const lastY = Math.min(HEIGHT, Math.ceil((screen.height - top_) / zoom));
+    for (let x = firstX; x <= lastX; x++) {
+      const at = Math.round(left + x * zoom) + 0.5;
+      context.moveTo(at, top_ + firstY * zoom);
+      context.lineTo(at, top_ + lastY * zoom);
+    }
+    for (let y = firstY; y <= lastY; y++) {
+      const at = Math.round(top_ + y * zoom) + 0.5;
+      context.moveTo(left + firstX * zoom, at);
+      context.lineTo(left + lastX * zoom, at);
+    }
+    context.stroke();
+  }
+
+  // While the mouse is captured the pointer doesn't move here, so the marker would sit
+  // frozen over the picture.
+  if (hover && !document.pointerLockElement) {
+    context.strokeStyle = "#0ff";
+    context.lineWidth = 2;
+    context.strokeRect(left + hover.x * zoom, top_ + hover.y * zoom, zoom, zoom);
+  }
+  element("zoom").textContent = `${Math.round(zoom * 100) / 100}x`;
+  showPixel();
+}
+
+function showPixel() {
+  // It's only visible in the overlay, and reading a pixel is slow.
+  if (!hover || !current || element("help").hidden) {
+    return;
+  }
+  probeContext.drawImage(current, -hover.x, -hover.y);
+  const [r, g, b] = probeContext.getImageData(0, 0, 1, 1).data;
+  const hex = [r, g, b].map((value) => value.toString(16).padStart(2, "0")).join("");
+  element("swatch").style.background = `#${hex}`;
+  element("pixel").textContent = `x=${hover.x} y=${hover.y} #${hex} rgb(${r},${g},${b})`;
+}
+
+let dragging = null;
+
+screen.addEventListener("wheel", (event) => {
+  event.preventDefault();
+  const factor = event.deltaY < 0 ? WHEEL_STEP : 1 / WHEEL_STEP;
+  zoomAt(factor, cssToScreen(event.offsetX), cssToScreen(event.offsetY));
+}, { passive: false });
+
+screen.addEventListener("pointerdown", (event) => {
+  screen.setPointerCapture(event.pointerId);
+  dragging = { x: cssToScreen(event.offsetX), y: cssToScreen(event.offsetY) };
+});
+
+screen.addEventListener("pointerup", () => { dragging = null; });
+
+screen.addEventListener("pointermove", (event) => {
+  const x = cssToScreen(event.offsetX), y = cssToScreen(event.offsetY);
+  if (dragging) {
+    left += x - dragging.x;
+    top_ += y - dragging.y;
+    dragging = { x, y };
+  }
+  const imageX = Math.floor((x - left) / zoom), imageY = Math.floor((y - top_) / zoom);
+  const inside = imageX >= 0 && imageX < WIDTH && imageY >= 0 && imageY < HEIGHT;
+  hover = inside ? { x: imageX, y: imageY } : null;
+  draw();
+});
+
+element("in").onclick = () => zoomCenter(ZOOM_STEP);
+element("out").onclick = () => zoomCenter(1 / ZOOM_STEP);
+element("fit").onclick = fit;
+element("actual").onclick = () => zoomCenter(1 / zoom);
+
+function setPaused(value) {
+  paused = value;
+  // Nothing needs sending until it resumes.
+  if (paused) stream?.abort();
+  element("pause").classList.toggle("on", paused);
+  element("pause").textContent = paused ? "Paused" : "Pause";
+}
+
+element("pause").onclick = () => setPaused(!paused);
+
+function toggleFullscreen() {
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  } else {
+    document.documentElement.requestFullscreen();
+  }
+}
+
+/** How often added-up mouse movement goes to the Pi, at most. About 60 times a second. */
+const MOUSE_SEND_MS = 16;
+const MOUSE_MAX_DELTA = 32767;
+
+let mouseX = 0;
+let mouseY = 0;
+
+const captureMouse = () => {
+  element("screen").requestPointerLock();
+};
+
+// Hides or brings back the pixel marker at once, even while paused.
+document.addEventListener("pointerlockchange", draw);
+
+/** How far a press can move, in CSS pixels, and still be a click rather than a pan. */
+const CLICK_MAX_MOVE = 4;
+let pressedAt = null;
+
+screen.addEventListener("pointerdown", (event) => {
+  pressedAt = { x: event.clientX, y: event.clientY };
+});
+
+screen.addEventListener("pointerup", (event) => {
+  const moved = pressedAt && Math.hypot(event.clientX - pressedAt.x, event.clientY - pressedAt.y);
+  if (moved !== null && moved <= CLICK_MAX_MOVE && !document.pointerLockElement) {
+    captureMouse();
+  }
+  pressedAt = null;
+});
+
+document.addEventListener("mousemove", (event) => {
+  if (document.pointerLockElement) {
+    mouseX += event.movementX;
+    mouseY += event.movementY;
+  }
+});
+
+/** Sends one request at a time, so a slow connection just sends bigger moves. */
+const sendMouse = async () => {
+  for (;;) {
+    if (mouseX !== 0 || mouseY !== 0) {
+      const dx = Math.max(-MOUSE_MAX_DELTA, Math.min(MOUSE_MAX_DELTA, Math.round(mouseX)));
+      const dy = Math.max(-MOUSE_MAX_DELTA, Math.min(MOUSE_MAX_DELTA, Math.round(mouseY)));
+      mouseX -= dx;
+      mouseY -= dy;
+      try {
+        await fetch("/mouse", { method: "POST", body: new Int16Array([dx, dy]).buffer });
+      } catch {
+        // A lost move doesn't matter, as the next one carries on from wherever it landed.
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, MOUSE_SEND_MS));
+  }
+};
+
+/** Keys that go to the Pi as commands, rather than controlling this page. */
+const SENT_KEYS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "c"];
+/** Keys whose result is heard, which turn sound on first, so it's heard from its start. */
+const SOUND_KEYS = ["7", "8"];
+
+/** The sound player, loaded only once wanted. */
+const loadSound = () => import("/sound.js");
+const soundFailed = (error) => showSent(`couldn't load the sound player: ${error.message}`, false);
+
+/** How long good news stays up. Failures stay until the next key. */
+const SENT_NOTICE_MS = 1500;
+let sentTimer = null;
+
+const showSent = (text, fades) => {
+  clearTimeout(sentTimer);
+  element("sent").textContent = text;
+  if (fades) {
+    sentTimer = setTimeout(() => { element("sent").textContent = ""; }, SENT_NOTICE_MS);
+  }
+};
+
+const sendKey = async (key) => {
+  try {
+    const response = await fetch("/key", { method: "POST", body: key });
+    showSent(response.ok ? `sent ${key}` : `couldn't send ${key}: ${response.status}`, response.ok);
+  } catch (error) {
+    showSent(`couldn't send ${key}: ${error.message}`, false);
+  }
+};
+
+window.addEventListener("keydown", (event) => {
+  if (SENT_KEYS.includes(event.key)) {
+    // Leave browser shortcuts like Ctrl+1 alone. A held key doesn't repeat, as the Pi
+    // can't read serial while it's drawing.
+    if (!event.repeat && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const key = event.key;
+      if (SOUND_KEYS.includes(key)) {
+        loadSound().then(({ startSound }) => startSound(showSent)).catch(soundFailed).finally(() => sendKey(key));
+      }
+      else sendKey(key);
+    }
+  }
+  else if (event.key === "+" || event.key === "=") zoomCenter(ZOOM_STEP);
+  else if (event.key === "-") zoomCenter(1 / ZOOM_STEP);
+  else if (event.key === "z") fit();
+  else if (event.key === "a") zoomCenter(1 / zoom);
+  else if (event.key === " ") { event.preventDefault(); setPaused(!paused); }
+  else if (event.key === "f") toggleFullscreen();
+  else if (event.key === "m") captureMouse();
+  else if (event.key === "s") {
+    // The browser remembers the key, which it needs before playing.
+    loadSound().then(({ toggleSound }) => toggleSound(showSent)).catch(soundFailed);
+  }
+  else if (event.key === "?") {
+    element("help").hidden = !element("help").hidden;
+    showPixel();
+  }
+  else if (event.key === "Escape") element("help").hidden = true;
+});
+
+/** Start with a view from the address, like #zoom=8&x=60&y=530 for that top-left pixel. */
+function applyAddress() {
+  const parameters = new URLSearchParams(location.hash.slice(1));
+  if (!parameters.has("zoom")) {
+    return false;
+  }
+  zoom = clampZoom(Number(parameters.get("zoom")));
+  left = -Number(parameters.get("x") || 0) * zoom;
+  top_ = -Number(parameters.get("y") || 0) * zoom;
+  if (parameters.has("hx")) {
+    hover = { x: Number(parameters.get("hx")), y: Number(parameters.get("hy")) };
+  }
+  return true;
+}
+
+/** How long the hint about `?` stays up after the page loads. */
+const HINT_MS = 5000;
+
+/** How often an open page asks whether the server has a newer version of it. */
+const VERSION_CHECK_MS = 1000;
+
+/** Reloads into the same view, which the address carries across. */
+const reloadInPlace = () => {
+  history.replaceState(null, "", `#zoom=${zoom}&x=${-left / zoom}&y=${-top_ / zoom}`);
+  location.reload();
+};
+
+/**
+ * Reloads when the server has a newer page, waiting while paused, as that would lose
+ * the frame being studied, while fullscreen, as only a keypress can re-enter it, and
+ * while the mouse is captured, which a reload would release.
+ */
+const watchVersion = async () => {
+  let loaded = null;
+  for (;;) {
+    try {
+      const response = await fetch("/version", { cache: "no-store" });
+      if (response.ok) {
+        const version = await response.text();
+        loaded ??= version;
+        if (version !== loaded && !paused && !document.fullscreenElement && !document.pointerLockElement) {
+          reloadInPlace();
+        }
+      }
+    } catch {
+      // The server is restarting, or unreachable. Keep asking.
+    }
+    await new Promise((resolve) => setTimeout(resolve, VERSION_CHECK_MS));
+  }
+};
+
+/** How often the stream's readout updates. */
+const RATE_MS = 1000;
+const BYTES_PER_MB = 1024 * 1024;
+/** With nothing new for this long, the stream is reconnected and the picture is called old. */
+const STALL_MS = 2000;
+/** Room for a typical frame, which grows if one's bigger. */
+const INITIAL_STREAM_BUFFER = 1024 * 1024;
+const HEADER_END = [13, 10, 13, 10];
+const textDecoder = new TextDecoder();
+let rateShown = 0, rateBytes = 0, rateSkipped = 0, rateDrawMs = 0;
+let lastFrameAt = 0;
+let current = null;
+let stream = null;
+
+const findHeaderEnd = (bytes, length) => {
+  for (let at = 0; at + HEADER_END.length <= length; at++) {
+    if (HEADER_END.every((byte, offset) => bytes[at + offset] === byte)) {
+      return at;
+    }
+  }
+  return -1;
+};
+
+/** Hands each frame of a multipart stream to `onFrame`, however its bytes were divided up. */
+const readFrames = async (reader, onFrame) => {
+  let buffer = new Uint8Array(INITIAL_STREAM_BUFFER);
+  let used = 0;
+  // Where the current frame's bytes start, and how many there are, once its header is in.
+  let frameAt = 0, frameBytes = -1;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) {
+      return;
+    }
+    if (used + value.length > buffer.length) {
+      const bigger = new Uint8Array(Math.max(buffer.length * 2, used + value.length));
+      bigger.set(buffer.subarray(0, used));
+      buffer = bigger;
+    }
+    buffer.set(value, used);
+    used += value.length;
+    for (;;) {
+      if (frameBytes < 0) {
+        const headerEnd = findHeaderEnd(buffer, used);
+        if (headerEnd < 0) {
+          break;
+        }
+        const length = /content-length: *(\d+)/i.exec(textDecoder.decode(buffer.subarray(0, headerEnd)));
+        if (!length) {
+          throw new Error("a frame without a length");
+        }
+        frameAt = headerEnd + HEADER_END.length;
+        frameBytes = Number(length[1]);
+      }
+      const frameEnd = frameAt + frameBytes;
+      if (used < frameEnd) {
+        break;
+      }
+      onFrame(new Blob([buffer.subarray(frameAt, frameEnd)], { type: "image/jpeg" }));
+      buffer.copyWithin(0, frameEnd, used);
+      used -= frameEnd;
+      frameBytes = -1;
+    }
+  }
+};
+
+setInterval(() => {
+  const perSecond = 1000 / RATE_MS;
+  const drawMs = rateShown ? rateDrawMs / rateShown : 0;
+  const skipped = rateSkipped ? `, ${rateSkipped * perSecond} skipped` : "";
+  element("rate").textContent = `${rateShown * perSecond} frames/s${skipped}, ${(rateBytes * perSecond / BYTES_PER_MB).toFixed(1)} MB/s, ${drawMs.toFixed(1)} ms to decode and draw`;
+  rateShown = 0;
+  rateBytes = 0;
+  rateSkipped = 0;
+  rateDrawMs = 0;
+  if (!paused && stream && performance.now() - lastFrameAt > STALL_MS) {
+    element("status").textContent = "no frame: nothing new from the card";
+    stream.abort();
+  }
+}, RATE_MS);
+
+function show(image) {
+  current?.close();
+  current = image;
+  element("status").textContent = "";
+  draw();
+}
+
+// Only the newest frame gets decoded, so a slow browser skips frames rather than falling behind.
+let newest = null;
+let decoding = false;
+
+const decodeNewest = async () => {
+  if (decoding) {
+    return;
+  }
+  decoding = true;
+  while (newest) {
+    const blob = newest;
+    newest = null;
+    const decodeStart = performance.now();
+    try {
+      const image = await createImageBitmap(blob);
+      if (paused) {
+        image.close();
+      } else {
+        show(image);
+        rateShown += 1;
+        rateDrawMs += performance.now() - decodeStart;
+      }
+    } catch {
+      // One damaged frame isn't worth reporting, as the next is along shortly.
+    }
+  }
+  decoding = false;
+};
+
+const receiveFrame = (blob) => {
+  rateBytes += blob.size;
+  lastFrameAt = performance.now();
+  if (newest) {
+    rateSkipped += 1;
+  }
+  newest = blob;
+  decodeNewest();
+};
+
+/** Keeps one stream of frames open, except while paused, when nothing needs sending. */
+async function run() {
+  for (;;) {
+    if (paused) {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_MS));
+      continue;
+    }
+    stream = new AbortController();
+    lastFrameAt = performance.now();
+    try {
+      const response = await fetch("/video", { cache: "no-store", signal: stream.signal });
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      const reader = response.body.getReader();
+      await readFrames(reader, receiveFrame);
+    } catch (error) {
+      if (!paused && error.name !== "AbortError") {
+        element("status").textContent = `no frame: ${error.message}`;
+      }
+    }
+    stream = null;
+    await new Promise((resolve) => setTimeout(resolve, RETRY_MS));
+  }
+}
+
+// The window's new size can arrive just after this event, so fit again if it does.
+let fitOnResize = false;
+
+document.addEventListener("fullscreenchange", () => {
+  fitOnResize = true;
+  resize();
+  fit();
+});
+
+window.addEventListener("resize", () => {
+  resize();
+  if (fitOnResize) {
+    fitOnResize = false;
+    fit();
+  }
+});
+resize();
+if (!applyAddress()) {
+  fit();
+}
+
+run();
+watchVersion();
+setTimeout(() => element("hint").classList.add("gone"), HINT_MS);
+sendMouse();
+</script>

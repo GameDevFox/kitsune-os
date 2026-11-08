@@ -3,22 +3,6 @@
 
 .section ".text"
 
-.global test_bytes
-test_bytes:
-	// r0 start (inclusive)
-	// r1 end (exclusive)
-
-	mov r2, #0xffffffff
-1:
-	add r2, #1
-	strb r2, [r0, #0]
-	add r0, #1
-
-	cmp r0, r1
-	blo 1b
-
-	bx lr
-
 // 10 words * 4 bytes per word
 #define COPY_SIZE 40
 
@@ -31,7 +15,7 @@ copy_bytes:
 	// r1 - dest
 	// r2 - length
 
-	// r3 - next (from source)
+	// r3 - next (tracks progress)
 
 	// set "next"
 
@@ -213,11 +197,6 @@ perf_test:
 
 	bx lr
 
-.globl get_pmccntr
-get_pmccntr:
-	mrc PMCCNTR(r0)
-	bx lr
-
 .globl get_performance_counter
 get_performance_counter:
 	mrc PMCCNTR(r0)
@@ -302,6 +281,7 @@ live_fn:
 	dmb
 	dsb
 	isb
+
 .globl live_instruction
 live_instruction:
 	.word 0xee100f10

@@ -78,7 +78,10 @@ otg_mode=1
 arm_boost=1
 
 [all]
+enable_jtag_gpio=1
 enable_uart=1
+
 dtoverlay=disable-bt
 
 kernel=kitsune.img
+

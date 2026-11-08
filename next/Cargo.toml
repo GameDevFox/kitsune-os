@@ -1,0 +1,16 @@
+[workspace]
+resolver = "2"
+members = ["device_tree", "fat", "kernel", "protocol", "server", "tools/pi", "tools/uart", "tools/upload"]
+# Host programs can't build for the kernel's target, so plain `cargo` commands
+# only cover the kernel. They have aliases in .cargo/config.toml.
+default-members = ["kernel"]
+
+# Every crate is under the repo's license, in LICENSE at its root.
+[workspace.package]
+license = "AGPL-3.0-only"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

@@ -1,0 +1,17 @@
+#!/bin/bash
+# Builds the kernel, and the images that go with it:
+#   target/kernel-only.img    Just the kernel, which `cargo pi` loads over JTAG
+#   target/kitsune-next.img   The kernel and images, for the SD card
+set -euo pipefail
+
+readonly TRIPLE=aarch64-unknown-none-softfloat
+readonly KERNEL_IMAGE=target/kernel-only.img
+readonly FULL_IMAGE=target/kitsune-next.img
+readonly ELF="target/$TRIPLE/release/kernel"
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+cargo build --release
+rust-objcopy --strip-all -O binary "$ELF" "$KERNEL_IMAGE"
+python3 scripts/make-assets.py "$KERNEL_IMAGE" "$FULL_IMAGE"
+ls -la "$KERNEL_IMAGE" "$FULL_IMAGE"

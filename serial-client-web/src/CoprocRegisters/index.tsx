@@ -46,6 +46,17 @@ export const CoprocRegisters = () => {
       .then(() => readCoproc());
   };
 
+  const getCoprocLabel = (name: string) => {
+    const reg = coprocRegisters[name];
+    if(!reg)
+      return "";
+
+    const { args } = reg;
+
+    const asmArgs = `p${args[0]}, ${args[1]}, <Rt>, c${args[2]}, c${args[3]}, ${args[4]}`;
+    return `${name} - ${asmArgs}`;
+  };
+
   return (
     <Box>
       <Stack direction='row'>
@@ -53,13 +64,12 @@ export const CoprocRegisters = () => {
           useBasicStyles
           chakraStyles={{ container: provided => ({ ...provided, width: 180 }) }}
 
-          options={Object.entries(coprocRegisters).map(([name, value]) => {
-            const { args } = value;
-
-            const asmArgs = `p${args[0]}, ${args[1]}, <Rt>, c${args[2]}, c${args[3]}, ${args[4]}`;
-            const fullName = `${name} - ${asmArgs}`;
+          options={Object.keys(coprocRegisters).map(name => {
+            const fullName = getCoprocLabel(name)
             return { label: fullName, value: name };
           })}
+
+          value={{ label: getCoprocLabel(name), value: name }}
           onChange={e => setName(e?.value || '')}
         />
 

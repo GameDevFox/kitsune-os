@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { BsArrowClockwise } from "react-icons/bs";
 
-import { Button, Icon, Input, InputGroup, InputLeftAddon, Stack } from "@chakra-ui/react";
+import { Button, Input, InputGroup, InputLeftAddon, Stack } from "@chakra-ui/react";
 
 import { bytesToHex, bytesToStr, cleanHex, formatHex, hexToBytes, strToBytes } from "../utils";
 

@@ -2,7 +2,7 @@
   "name": "@kitsune-os/serial-client",
   "version": "1.0.0",
   "author": "Edward Nicholes Jr.",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "scripts": {
     "build:common": "cd ../common && yarn build",
     "start": "yarn build:common && nodemon ./src/index.ts",

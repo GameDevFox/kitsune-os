@@ -22,7 +22,6 @@ void delay(uint32_t count) {
   uint32_t time = read_timer();
   uint32_t stop = time + count;
 
-  while(time < stop) {
+  while(time < stop)
     time = read_timer();
-  }
 }

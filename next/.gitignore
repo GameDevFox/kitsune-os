@@ -1,0 +1,7 @@
+# Build output
+/scripts/__pycache__/
+/target/
+/tools/__pycache__/
+
+# Each machine's own choice of recording, for tools/voice.py
+/voice.local.json

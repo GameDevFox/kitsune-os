@@ -1,0 +1,9 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+
+[dependencies]
+protocol = { path = "../protocol" }
+tiny_http = "0.12"
